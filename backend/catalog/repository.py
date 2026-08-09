@@ -8,7 +8,16 @@ class ProductCatalogRepository:
         self,
         products: list[ProductTechnicalData],
     ) -> None:
-        self._products = {product.product_code: product for product in products}
+        self._products: dict[
+            str,
+            ProductTechnicalData,
+        ] = {}
+
+        for product in products:
+            if product.product_code in self._products:
+                raise ValueError("Duplicate product code: " f"{product.product_code}")
+
+            self._products[product.product_code] = product
 
     def get(
         self,

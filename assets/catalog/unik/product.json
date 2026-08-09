@@ -1,0 +1,51 @@
+{
+  "product_code": "UNIK",
+  "name": "UNIK",
+  "category": "window_profile",
+  "source_document": "source.pdf",
+  "description": "Sistema de perfil de ventana SUMUM UNIK.",
+  "properties": [
+    {
+      "code": "material",
+      "name": "Material",
+      "value": "PVC",
+      "unit": null,
+      "source_text": null
+    },
+    {
+      "code": "frame_depth",
+      "name": "Profundidad del marco",
+      "value": 76,
+      "unit": "mm",
+      "source_text": null
+    },
+    {
+      "code": "thermal_transmittance",
+      "name": "Transmitancia térmica Uf",
+      "value": "0.88",
+      "unit": "W/m²K",
+      "source_text": null
+    },
+    {
+      "code": "acoustic_insulation",
+      "name": "Aislamiento acústico",
+      "value": "hasta 48",
+      "unit": "dB",
+      "source_text": null
+    }
+  ],
+  "benefits": [
+    {
+      "code": "thermal",
+      "title": "Aislamiento térmico",
+      "description": null,
+      "category": "thermal"
+    },
+    {
+      "code": "acoustic",
+      "title": "Aislamiento acústico",
+      "description": null,
+      "category": "acoustic"
+    }
+  ]
+}

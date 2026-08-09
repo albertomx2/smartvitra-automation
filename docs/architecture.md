@@ -16,3 +16,21 @@ Definir la arquitectura técnica de SmartVitra Automation.
 ## Componentes
 
 Pendiente de definir.
+
+## Product Catalog
+
+The technical product catalog is dynamically loaded from:
+
+`assets/catalog/<product>/product.json`
+
+Each product directory contains:
+
+- `product.json`: structured product metadata.
+- `source.pdf`: original technical documentation.
+- `images/`: optional visual assets in future versions.
+
+Products must not be hardcoded into application code.
+
+`ProductCatalogRepository` rejects duplicate product codes.
+
+The original technical document remains the source of truth for technical product data.

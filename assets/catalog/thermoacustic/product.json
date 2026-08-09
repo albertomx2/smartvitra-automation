@@ -1,0 +1,22 @@
+{
+  "product_code": "THERMOACUSTIC",
+  "name": "Cajón SUMUM Thermoacustic",
+  "category": "shutter_box",
+  "source_document": "source.pdf",
+  "description": "Cajón de persiana SUMUM orientado al aislamiento térmico y acústico.",
+  "properties": [],
+  "benefits": [
+    {
+      "code": "thermal",
+      "title": "Aislamiento térmico",
+      "description": null,
+      "category": "thermal"
+    },
+    {
+      "code": "acoustic",
+      "title": "Aislamiento acústico",
+      "description": null,
+      "category": "acoustic"
+    }
+  ]
+}

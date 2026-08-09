@@ -1,0 +1,16 @@
+{
+  "product_code": "MICROVENTILATION",
+  "name": "Microventilación",
+  "category": "hardware",
+  "source_document": "source.pdf",
+  "description": "Sistema de microventilación integrado en el herraje de la ventana.",
+  "properties": [],
+  "benefits": [
+    {
+      "code": "controlled_ventilation",
+      "title": "Ventilación controlada",
+      "description": null,
+      "category": "ventilation"
+    }
+  ]
+}
