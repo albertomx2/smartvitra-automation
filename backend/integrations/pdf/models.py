@@ -13,9 +13,46 @@ class RawOpening(BaseModel):
     glass_description: str | None = None
 
     quantity: Decimal | None = None
-    unit_price: Decimal | None = None
+
+    list_price: Decimal | None = None
+    discounted_unit_price: Decimal | None = None
+
     discount_percentage: Decimal | None = None
+
+    tax_percentage: Decimal | None = None
+
     subtotal: Decimal | None = None
+
+
+class RawServiceLine(BaseModel):
+    name: str
+
+    description: str | None = None
+
+    quantity: Decimal | None = None
+
+    list_price: Decimal | None = None
+    discounted_unit_price: Decimal | None = None
+
+    discount_percentage: Decimal | None = None
+    tax_percentage: Decimal | None = None
+
+    subtotal: Decimal | None = None
+
+
+class RawDiscountLine(BaseModel):
+    name: str
+
+    description: str | None = None
+
+    amount: Decimal | None = None
+
+
+class RawAdvancePayment(BaseModel):
+    reference: str | None = None
+    payment_date: date | None = None
+
+    amount: Decimal | None = None
 
 
 class RawPaymentTerms(BaseModel):
@@ -40,6 +77,12 @@ class RawProposalData(BaseModel):
     total: Decimal | None = None
 
     openings: list[RawOpening] = Field(default_factory=list)
+
+    services: list[RawServiceLine] = Field(default_factory=list)
+
+    discounts: list[RawDiscountLine] = Field(default_factory=list)
+
+    advance_payments: list[RawAdvancePayment] = Field(default_factory=list)
 
     payment_terms: RawPaymentTerms | None = None
 

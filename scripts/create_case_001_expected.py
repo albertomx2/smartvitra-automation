@@ -4,13 +4,17 @@ from pathlib import Path
 from uuid import UUID
 
 from backend.domain.proposal import (
+    AdvancePayment,
     Commercial,
+    CommercialDiscount,
     Customer,
     GlassConfiguration,
     Opening,
     PaymentTerms,
+    PriceLine,
     Pricing,
     Proposal,
+    ServiceLine,
 )
 
 proposal = Proposal(
@@ -92,6 +96,89 @@ proposal = Proposal(
         subtotal=Decimal("3282.58"),
         tax_total=Decimal("689.35"),
         total=Decimal("3971.93"),
+        lines=[
+            PriceLine(
+                opening_id="V1",
+                description="Ventana 2 hojas",
+                quantity=Decimal("1.00"),
+                list_price=Decimal("1310.00"),
+                unit_price=Decimal("1126.60"),
+                discount_percentage=Decimal("14.00"),
+                subtotal=Decimal("1126.60"),
+                tax_percentage=Decimal(21),
+            ),
+            PriceLine(
+                opening_id="V2",
+                description="Ventana 2 hojas",
+                quantity=Decimal("1.00"),
+                list_price=Decimal("1295.00"),
+                unit_price=Decimal("1113.70"),
+                discount_percentage=Decimal("14.00"),
+                subtotal=Decimal("1113.70"),
+                tax_percentage=Decimal(21),
+            ),
+            PriceLine(
+                opening_id="V3",
+                description="Ventana 1 hoja",
+                quantity=Decimal("1.00"),
+                list_price=Decimal("1330.00"),
+                unit_price=Decimal("1143.80"),
+                discount_percentage=Decimal("14.00"),
+                subtotal=Decimal("1143.80"),
+                tax_percentage=Decimal(21),
+            ),
+        ],
+        services=[
+            ServiceLine(
+                name="INSTALACIÓN INCLUIDA",
+                description=(
+                    "Incluye: Forrado y protección de suelos y muebles "
+                    "cercanos. Retirada de materiales existentes Limpieza "
+                    "y preparación de hueco antes de instalación "
+                    "Aislamiento perimetral de hueco Instalación de la "
+                    "nueva carpintería. Instalación de todos los remates "
+                    "exteriores perimetrales. Sellados estructurales."
+                ),
+                quantity=Decimal("3.00"),
+                list_price=Decimal("130.00"),
+                unit_price=Decimal("0.00"),
+                discount_percentage=Decimal("100.00"),
+                subtotal=Decimal("0.00"),
+                tax_percentage=Decimal(21),
+            ),
+            ServiceLine(
+                name="EXTRA ALBAÑILERÍA",
+                description=(
+                    "Incluye: Aislamiento de capialzado mediante lona de "
+                    "roca. Tabicado y enlucido de yeso o pladur NO INCLUYE "
+                    "remate de pintura ni su preparación"
+                ),
+                quantity=Decimal("3.00"),
+                list_price=Decimal("60.00"),
+                unit_price=Decimal("0.00"),
+                discount_percentage=Decimal("100.00"),
+                subtotal=Decimal("0.00"),
+                tax_percentage=Decimal(21),
+            ),
+        ],
+        discounts=[
+            CommercialDiscount(
+                name="EXTRA COMERCIAL DEL 3.00%",
+                amount=Decimal("-101.52"),
+            ),
+        ],
+        advance_payments=[
+            AdvancePayment(
+                reference="S00122",
+                payment_date=date(2026, 5, 6),
+                amount=Decimal("1641.29"),
+            ),
+            AdvancePayment(
+                reference="S00122",
+                payment_date=date(2026, 6, 12),
+                amount=Decimal("984.77"),
+            ),
+        ],
         payment_terms=PaymentTerms(
             description=(
                 "50 % en concepto de anticipo a la aprobación "

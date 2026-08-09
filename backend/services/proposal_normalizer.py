@@ -1,13 +1,17 @@
 from decimal import Decimal
 
 from backend.domain.proposal import (
+    AdvancePayment,
     Commercial,
+    CommercialDiscount,
     Customer,
     GlassConfiguration,
     Opening,
     PaymentTerms,
+    PriceLine,
     Pricing,
     Proposal,
+    ServiceLine,
 )
 from backend.integrations.pdf.models import (
     RawOpening,
@@ -94,6 +98,48 @@ class ProposalNormalizer:
             subtotal=raw.subtotal,
             tax_total=raw.tax_total,
             total=raw.total,
+            lines=[
+                PriceLine(
+                    opening_id=opening.identifier,
+                    description=opening.description or opening.identifier,
+                    quantity=opening.quantity or Decimal(1),
+                    list_price=opening.list_price,
+                    unit_price=opening.discounted_unit_price,
+                    discount_percentage=opening.discount_percentage,
+                    subtotal=opening.subtotal,
+                    tax_percentage=opening.tax_percentage,
+                )
+                for opening in raw.openings
+            ],
+            services=[
+                ServiceLine(
+                    name=service.name,
+                    description=service.description,
+                    quantity=service.quantity,
+                    list_price=service.list_price,
+                    unit_price=service.discounted_unit_price,
+                    discount_percentage=service.discount_percentage,
+                    subtotal=service.subtotal,
+                    tax_percentage=service.tax_percentage,
+                )
+                for service in raw.services
+            ],
+            discounts=[
+                CommercialDiscount(
+                    name=discount.name,
+                    description=discount.description,
+                    amount=discount.amount,
+                )
+                for discount in raw.discounts
+            ],
+            advance_payments=[
+                AdvancePayment(
+                    reference=payment.reference,
+                    payment_date=payment.payment_date,
+                    amount=payment.amount,
+                )
+                for payment in raw.advance_payments
+            ],
             payment_terms=payment_terms,
         )
 

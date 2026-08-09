@@ -131,6 +131,7 @@ class PriceLine(BaseModel):
 
     quantity: Decimal = Decimal(1)
 
+    list_price: Decimal | None = None
     unit_price: Decimal | None = None
 
     discount_percentage: Decimal | None = None
@@ -148,6 +149,39 @@ class PaymentTerms(BaseModel):
     final_percentage: Decimal | None = None
 
 
+class ServiceLine(BaseModel):
+    name: str
+
+    description: str | None = None
+
+    quantity: Decimal | None = None
+
+    list_price: Decimal | None = None
+    unit_price: Decimal | None = None
+
+    discount_percentage: Decimal | None = None
+
+    subtotal: Decimal | None = None
+
+    tax_percentage: Decimal | None = None
+
+
+class CommercialDiscount(BaseModel):
+    name: str
+
+    description: str | None = None
+
+    amount: Decimal | None = None
+
+
+class AdvancePayment(BaseModel):
+    reference: str | None = None
+
+    payment_date: date | None = None
+
+    amount: Decimal | None = None
+
+
 class Pricing(BaseModel):
     currency: str = "EUR"
 
@@ -162,6 +196,11 @@ class Pricing(BaseModel):
     lines: list[PriceLine] = Field(default_factory=list)
 
     payment_terms: PaymentTerms | None = None
+    services: list[ServiceLine] = Field(default_factory=list)
+
+    discounts: list[CommercialDiscount] = Field(default_factory=list)
+
+    advance_payments: list[AdvancePayment] = Field(default_factory=list)
 
 
 class SourceDocument(BaseModel):

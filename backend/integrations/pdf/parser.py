@@ -1,10 +1,14 @@
 import re
 from datetime import date
+from decimal import InvalidOperation
 
 from backend.integrations.pdf.models import (
+    RawAdvancePayment,
+    RawDiscountLine,
     RawOpening,
     RawPaymentTerms,
     RawProposalData,
+    RawServiceLine,
 )
 from backend.integrations.pdf.utils import parse_euro_decimal
 
@@ -76,6 +80,12 @@ class PdfProposalParser:
 
         openings = self._extract_openings(lines)
 
+        services = self._extract_services(lines)
+
+        discounts = self._extract_discounts(lines)
+
+        advance_payments = self._extract_advance_payments(lines)
+
         payment_terms = self._extract_payment_terms(lines)
 
         return RawProposalData(
@@ -92,6 +102,9 @@ class PdfProposalParser:
             tax_total=tax_total,
             total=total,
             openings=openings,
+            services=services,
+            discounts=discounts,
+            advance_payments=advance_payments,
             payment_terms=payment_terms,
             raw_text=text,
         )
@@ -144,14 +157,40 @@ class PdfProposalParser:
             if not match:
                 continue
 
-            room = None
-            glass_description = None
-
-            if index + 1 < len(lines):
+            try:
                 room = lines[index + 1]
-
-            if index + 2 < len(lines):
                 glass_description = lines[index + 2]
+
+                quantity = parse_euro_decimal(lines[index + 3])
+
+                list_price = parse_euro_decimal(lines[index + 5])
+
+                discounted_unit_price = parse_euro_decimal(lines[index + 7])
+
+                discount_percentage = parse_euro_decimal(lines[index + 9])
+
+                tax_match = re.match(
+                    r"(?P<tax>\d+(?:,\d+)?)%",
+                    lines[index + 10],
+                )
+
+                tax_percentage = None
+
+                if tax_match:
+                    tax_percentage = parse_euro_decimal(tax_match.group("tax"))
+
+                subtotal = parse_euro_decimal(lines[index + 11])
+
+            except (
+                IndexError,
+                ValueError,
+            ):
+                quantity = None
+                list_price = None
+                discounted_unit_price = None
+                discount_percentage = None
+                tax_percentage = None
+                subtotal = None
 
             openings.append(
                 RawOpening(
@@ -159,11 +198,163 @@ class PdfProposalParser:
                     identifier=match.group("identifier"),
                     description=match.group("description"),
                     room=room,
-                    glass_description=glass_description,
+                    glass_description=(glass_description),
+                    quantity=quantity,
+                    list_price=list_price,
+                    discounted_unit_price=(discounted_unit_price),
+                    discount_percentage=(discount_percentage),
+                    tax_percentage=tax_percentage,
+                    subtotal=subtotal,
                 )
             )
 
         return openings
+
+    def _extract_services(
+        self,
+        lines: list[str],
+    ) -> list[RawServiceLine]:
+        services: list[RawServiceLine] = []
+
+        service_names = (
+            "INSTALACIÓN INCLUIDA",
+            "EXTRA ALBAÑILERÍA",
+        )
+
+        for service_name in service_names:
+            try:
+                start = lines.index(service_name)
+            except ValueError:
+                continue
+
+            quantity_index = None
+
+            for index in range(
+                start + 1,
+                min(start + 25, len(lines)),
+            ):
+                if index + 1 < len(lines) and lines[index + 1].lower() == "unidades":
+                    quantity_index = index
+                    break
+
+            if quantity_index is None:
+                continue
+
+            quantity = parse_euro_decimal(lines[quantity_index])
+
+            list_price = parse_euro_decimal(lines[quantity_index + 2])
+
+            discounted_unit_price = parse_euro_decimal(lines[quantity_index + 4])
+
+            discount_percentage = parse_euro_decimal(lines[quantity_index + 6])
+
+            tax_match = re.match(
+                r"(?P<tax>\d+(?:,\d+)?)%",
+                lines[quantity_index + 7],
+            )
+
+            tax_percentage = None
+
+            if tax_match:
+                tax_percentage = parse_euro_decimal(tax_match.group("tax"))
+
+            subtotal = parse_euro_decimal(lines[quantity_index + 8])
+
+            description_lines = lines[start + 1 : quantity_index]
+
+            services.append(
+                RawServiceLine(
+                    name=service_name,
+                    description=" ".join(description_lines),
+                    quantity=quantity,
+                    list_price=list_price,
+                    discounted_unit_price=(discounted_unit_price),
+                    discount_percentage=(discount_percentage),
+                    tax_percentage=tax_percentage,
+                    subtotal=subtotal,
+                )
+            )
+
+        return services
+
+    def _extract_discounts(
+        self,
+        lines: list[str],
+    ):
+        discounts = []
+
+        for index, line in enumerate(lines):
+            if not line.startswith("EXTRA COMERCIAL DEL"):
+                continue
+
+            amount = None
+
+            for candidate in lines[index + 1 : min(index + 12, len(lines))]:
+                try:
+                    parsed = parse_euro_decimal(candidate)
+                except InvalidOperation:
+                    continue
+
+                if parsed < 0:
+                    amount = parsed
+                    break
+
+            discounts.append(
+                RawDiscountLine(
+                    name=line,
+                    amount=amount,
+                )
+            )
+
+        return discounts
+
+    def _extract_advance_payments(
+        self,
+        lines: list[str],
+    ) -> list[RawAdvancePayment]:
+        payments: list[RawAdvancePayment] = []
+
+        pattern = re.compile(
+            r"^Anticipo \(ref: "
+            r"(?P<reference>.+?) el "
+            r"(?P<date>\d{2}/\d{2}/\d{4})\)$"
+        )
+
+        for index, line in enumerate(lines):
+            match = pattern.match(line)
+
+            if not match:
+                continue
+
+            day, month, year = match.group("date").split("/")
+
+            payment_date = date(
+                int(year),
+                int(month),
+                int(day),
+            )
+
+            amount = None
+
+            for candidate in lines[index + 1 : min(index + 8, len(lines))]:
+                try:
+                    parsed = parse_euro_decimal(candidate)
+                except InvalidOperation:
+                    continue
+
+                if parsed > 0:
+                    amount = parsed
+                    break
+
+            payments.append(
+                RawAdvancePayment(
+                    reference=match.group("reference"),
+                    payment_date=payment_date,
+                    amount=amount,
+                )
+            )
+
+        return payments
 
     def _extract_payment_terms(
         self,

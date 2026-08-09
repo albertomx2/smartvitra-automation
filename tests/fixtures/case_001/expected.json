@@ -91,13 +91,85 @@
     "subtotal": "3282.58",
     "tax_total": "689.35",
     "total": "3971.93",
-    "lines": [],
+    "lines": [
+      {
+        "opening_id": "V1",
+        "description": "Ventana 2 hojas",
+        "quantity": "1.00",
+        "list_price": "1310.00",
+        "unit_price": "1126.60",
+        "discount_percentage": "14.00",
+        "subtotal": "1126.60",
+        "tax_percentage": "21"
+      },
+      {
+        "opening_id": "V2",
+        "description": "Ventana 2 hojas",
+        "quantity": "1.00",
+        "list_price": "1295.00",
+        "unit_price": "1113.70",
+        "discount_percentage": "14.00",
+        "subtotal": "1113.70",
+        "tax_percentage": "21"
+      },
+      {
+        "opening_id": "V3",
+        "description": "Ventana 1 hoja",
+        "quantity": "1.00",
+        "list_price": "1330.00",
+        "unit_price": "1143.80",
+        "discount_percentage": "14.00",
+        "subtotal": "1143.80",
+        "tax_percentage": "21"
+      }
+    ],
     "payment_terms": {
       "description": "50 % en concepto de anticipo a la aprobación del presupuesto. 30 % siete días antes de la fecha de instalación. 20 % restante a la finalización de la instalación.",
       "deposit_percentage": "50",
       "pre_installation_percentage": "30",
       "final_percentage": "20"
-    }
+    },
+    "services": [
+      {
+        "name": "INSTALACIÓN INCLUIDA",
+        "description": "Incluye: Forrado y protección de suelos y muebles cercanos. Retirada de materiales existentes Limpieza y preparación de hueco antes de instalación Aislamiento perimetral de hueco Instalación de la nueva carpintería. Instalación de todos los remates exteriores perimetrales. Sellados estructurales.",
+        "quantity": "3.00",
+        "list_price": "130.00",
+        "unit_price": "0.00",
+        "discount_percentage": "100.00",
+        "subtotal": "0.00",
+        "tax_percentage": "21"
+      },
+      {
+        "name": "EXTRA ALBAÑILERÍA",
+        "description": "Incluye: Aislamiento de capialzado mediante lona de roca. Tabicado y enlucido de yeso o pladur NO INCLUYE remate de pintura ni su preparación",
+        "quantity": "3.00",
+        "list_price": "60.00",
+        "unit_price": "0.00",
+        "discount_percentage": "100.00",
+        "subtotal": "0.00",
+        "tax_percentage": "21"
+      }
+    ],
+    "discounts": [
+      {
+        "name": "EXTRA COMERCIAL DEL 3.00%",
+        "description": null,
+        "amount": "-101.52"
+      }
+    ],
+    "advance_payments": [
+      {
+        "reference": "S00122",
+        "payment_date": "2026-05-06",
+        "amount": "1641.29"
+      },
+      {
+        "reference": "S00122",
+        "payment_date": "2026-06-12",
+        "amount": "984.77"
+      }
+    ]
   },
   "source_documents": [],
   "generated_assets": [],
