@@ -1,0 +1,101 @@
+{
+  "schema_version": "1.0",
+  "id": "00000000-0000-0000-0000-000000000001",
+  "proposal_number": "S00122",
+  "status": "draft",
+  "created_at": "2026-05-06T12:00:00Z",
+  "updated_at": "2026-05-06T12:00:00Z",
+  "proposal_date": "2026-05-06",
+  "customer": {
+    "name": "TEST CUSTOMER",
+    "email": null,
+    "phone": null,
+    "address": null,
+    "city": "Madrid",
+    "postal_code": null,
+    "country": "España",
+    "odoo_id": null
+  },
+  "commercial": null,
+  "prefweb_id": null,
+  "odoo_quote_id": "S00122",
+  "odoo_opportunity_id": null,
+  "openings": [
+    {
+      "id": "V1",
+      "position": 1,
+      "room": "Habitación Exterior",
+      "description": null,
+      "window_type": "Ventana 2 hojas",
+      "quantity": 1,
+      "profile": null,
+      "glass": {
+        "description": "Vidrio con Control Solar + argón",
+        "control_solar": true,
+        "low_emissivity": null,
+        "argon": true,
+        "composition": null
+      },
+      "dimensions": null,
+      "options": []
+    },
+    {
+      "id": "V2",
+      "position": 2,
+      "room": "Habitación interior",
+      "description": null,
+      "window_type": "Ventana 2 hojas",
+      "quantity": 1,
+      "profile": null,
+      "glass": {
+        "description": "Vidrio con bajo Emisivo + argón",
+        "control_solar": null,
+        "low_emissivity": true,
+        "argon": true,
+        "composition": null
+      },
+      "dimensions": null,
+      "options": []
+    },
+    {
+      "id": "V3",
+      "position": 3,
+      "room": "Habitación puerta",
+      "description": null,
+      "window_type": "Ventana 1 hoja",
+      "quantity": 1,
+      "profile": null,
+      "glass": {
+        "description": "Vidrio con Bajo Emisivo + argón",
+        "control_solar": null,
+        "low_emissivity": true,
+        "argon": true,
+        "composition": null
+      },
+      "dimensions": null,
+      "options": []
+    }
+  ],
+  "products": [],
+  "customer_needs": [],
+  "visit_notes": [],
+  "photos": [],
+  "pricing": {
+    "currency": "EUR",
+    "usual_cost": "4403.48",
+    "discount_total": "1120.90",
+    "subtotal": "3282.58",
+    "tax_total": "689.35",
+    "total": "3971.93",
+    "lines": [],
+    "payment_terms": {
+      "description": "50 % anticipo, 30 % siete días antes de instalación, 20 % a la finalización.",
+      "deposit_percentage": "50",
+      "pre_installation_percentage": "30",
+      "final_percentage": "20"
+    }
+  },
+  "source_documents": [],
+  "generated_assets": [],
+  "validation_results": []
+}
