@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+
+# Environment variables / secrets
+.env
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# Generated artifacts
+generated/
+
+# Local object storage
+minio_data/
+
+# Database local data
+postgres_data/
+
+# Real customer documents
+assets/examples/
