@@ -7,16 +7,20 @@
   "updated_at": "2026-05-06T12:00:00Z",
   "proposal_date": "2026-05-06",
   "customer": {
-    "name": "TEST CUSTOMER",
+    "name": "Bonifacio Alonso Madero",
     "email": null,
     "phone": null,
-    "address": null,
+    "address": "C/ Periana 19, 1º B",
     "city": "Madrid",
     "postal_code": null,
     "country": "España",
     "odoo_id": null
   },
-  "commercial": null,
+  "commercial": {
+    "name": "Samanta",
+    "email": null,
+    "odoo_id": null
+  },
   "prefweb_id": null,
   "odoo_quote_id": "S00122",
   "odoo_opportunity_id": null,
@@ -32,7 +36,7 @@
       "glass": {
         "description": "Vidrio con Control Solar + argón",
         "control_solar": true,
-        "low_emissivity": null,
+        "low_emissivity": false,
         "argon": true,
         "composition": null
       },
@@ -49,7 +53,7 @@
       "profile": null,
       "glass": {
         "description": "Vidrio con bajo Emisivo + argón",
-        "control_solar": null,
+        "control_solar": false,
         "low_emissivity": true,
         "argon": true,
         "composition": null
@@ -67,7 +71,7 @@
       "profile": null,
       "glass": {
         "description": "Vidrio con Bajo Emisivo + argón",
-        "control_solar": null,
+        "control_solar": false,
         "low_emissivity": true,
         "argon": true,
         "composition": null
@@ -89,7 +93,7 @@
     "total": "3971.93",
     "lines": [],
     "payment_terms": {
-      "description": "50 % anticipo, 30 % siete días antes de instalación, 20 % a la finalización.",
+      "description": "50 % en concepto de anticipo a la aprobación del presupuesto. 30 % siete días antes de la fecha de instalación. 20 % restante a la finalización de la instalación.",
       "deposit_percentage": "50",
       "pre_installation_percentage": "30",
       "final_percentage": "20"
