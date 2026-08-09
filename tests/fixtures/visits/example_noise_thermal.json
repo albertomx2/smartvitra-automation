@@ -1,0 +1,32 @@
+{
+  "opening_products": [
+    {
+      "opening_id": "V1",
+      "product_codes": [
+        "UNIK",
+        "THERMOACUSTIC"
+      ]
+    },
+    {
+      "opening_id": "V2",
+      "product_codes": [
+        "UNIK"
+      ]
+    }
+  ],
+  "global_product_codes": [],
+  "customer_needs": [
+    {
+      "code": "acoustic_noise",
+      "priority": 5,
+      "description": "El cliente quiere reducir significativamente el ruido exterior.",
+      "source_text": "Lo peor es el ruido de los coches por la noche."
+    },
+    {
+      "code": "thermal_loss",
+      "priority": 3,
+      "description": "El cliente nota pérdida térmica durante el invierno.",
+      "source_text": "También entra algo de frío, sobre todo en el dormitorio."
+    }
+  ]
+}
