@@ -63,6 +63,8 @@ class Photo(BaseModel):
 
     storage_key: str
 
+    usage: list[str] = Field(default_factory=list)
+
     description: str | None = None
 
     original_filename: str | None = None

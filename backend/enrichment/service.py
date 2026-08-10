@@ -59,6 +59,7 @@ class ProposalEnrichmentService:
                 opening_id=photo.opening_id,
                 photo_type=PhotoType(photo.photo_type),
                 storage_key=photo.storage_key,
+                usage=photo.usage,
                 description=photo.description,
                 original_filename=photo.original_filename,
             )

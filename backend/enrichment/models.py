@@ -8,6 +8,8 @@ class VisitPhotoInput(BaseModel):
 
     photo_type: str = "other"
 
+    usage: list[str] = Field(default_factory=list)
+
     storage_key: str
 
     description: str | None = None

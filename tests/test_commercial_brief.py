@@ -185,6 +185,10 @@ def test_commercial_brief_includes_photos():
                 opening_id="V1",
                 photo_type=PhotoType.PROBLEM,
                 storage_key="photos/V1/problem.jpg",
+                usage=[
+                    "current_problem",
+                    "before_after",
+                ],
                 description="Ventana actual",
             )
         ],
@@ -203,6 +207,7 @@ def test_commercial_brief_includes_photos():
     assert brief.photos[0].opening_id == "V1"
     assert brief.photos[0].photo_type == "problem"
     assert brief.photos[0].is_ai_generated is False
+    assert "before_after" in brief.photos[0].usage
 
 
 def test_commercial_brief_includes_technical_properties():
@@ -278,3 +283,41 @@ def test_commercial_brief_includes_services():
     assert brief.services[0].name == "INSTALACIÓN INCLUIDA"
 
     assert brief.services[0].included is True
+
+
+def test_commercial_brief_preserves_photo_usage():
+    from backend.domain.enums import PhotoType
+    from backend.domain.proposal import Photo
+
+    proposal = Proposal(
+        customer=Customer(name="Test Customer"),
+        photos=[
+            Photo(
+                opening_id="V1",
+                photo_type=PhotoType.PROBLEM,
+                storage_key=("photos/V1/problem.jpg"),
+                usage=[
+                    "current_problem",
+                    "problem_confirmation",
+                    "before_after",
+                ],
+            )
+        ],
+    )
+
+    catalog = build_default_catalog()
+
+    matches = BenefitMatcher(catalog).match(proposal)
+
+    brief = CommercialBriefBuilder(catalog).build(
+        proposal,
+        matches,
+    )
+
+    assert len(brief.photos) == 1
+
+    assert brief.photos[0].usage == [
+        "current_problem",
+        "problem_confirmation",
+        "before_after",
+    ]

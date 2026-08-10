@@ -33,6 +33,11 @@
     {
       "opening_id": "V1",
       "photo_type": "problem",
+      "usage": [
+        "current_problem",
+        "problem_confirmation",
+        "before_after"
+      ],
       "storage_key": "visits/S00122/photos/V1/problem_01.jpg",
       "description": "Ventana exterior afectada por ruido de tráfico.",
       "original_filename": "IMG_1024.jpg"
@@ -40,6 +45,10 @@
     {
       "opening_id": "V2",
       "photo_type": "overview",
+      "usage": [
+        "room_context",
+        "proposal"
+      ],
       "storage_key": "visits/S00122/photos/V2/overview_01.jpg",
       "description": "Vista general de la ventana del dormitorio.",
       "original_filename": "IMG_1025.jpg"
@@ -47,8 +56,12 @@
     {
       "opening_id": null,
       "photo_type": "facade",
+      "usage": [
+        "facade",
+        "proposal"
+      ],
       "storage_key": "visits/S00122/photos/general/facade_01.jpg",
-      "description": "Vista exterior de la fachada.",
+      "description": "Vista exterior general de la vivienda.",
       "original_filename": "IMG_1026.jpg"
     }
   ]

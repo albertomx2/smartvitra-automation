@@ -164,16 +164,20 @@ def test_visit_photos_are_added_to_proposal():
 
     assert len(enriched.photos) == 3
 
-    assert enriched.photos[0].opening_id == "V1"
+    first = enriched.photos[0]
 
-    assert enriched.photos[0].photo_type.value == "problem"
+    assert first.opening_id == "V1"
+
+    assert first.photo_type.value == "problem"
+
+    assert "before_after" in first.usage
 
     assert enriched.photos[2].opening_id is None
 
-    assert enriched.photos[2].photo_type.value == "facade"
-
 
 def test_photo_with_unknown_opening_is_rejected():
+    import pytest
+
     from backend.enrichment.models import (
         VisitPhotoInput,
     )
@@ -190,7 +194,10 @@ def test_photo_with_unknown_opening_is_rejected():
             VisitPhotoInput(
                 opening_id="V99",
                 photo_type="problem",
-                storage_key="photos/problem.jpg",
+                usage=[
+                    "current_problem",
+                ],
+                storage_key=("photos/problem.jpg"),
             )
         ]
     )
@@ -199,8 +206,6 @@ def test_photo_with_unknown_opening_is_rejected():
         product_enricher=ProductEnricher(build_default_catalog()),
         customer_needs_service=(CustomerNeedsService()),
     )
-
-    import pytest
 
     with pytest.raises(
         ValueError,

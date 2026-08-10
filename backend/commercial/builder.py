@@ -164,6 +164,7 @@ class CommercialBriefBuilder:
                 opening_id=photo.opening_id,
                 photo_type=photo.photo_type.value,
                 storage_key=photo.storage_key,
+                usage=photo.usage,
                 description=photo.description,
                 is_ai_generated=photo.is_ai_generated,
             )

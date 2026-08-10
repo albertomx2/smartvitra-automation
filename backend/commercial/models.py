@@ -39,6 +39,8 @@ class BriefPhoto(BaseModel):
     photo_type: str
     storage_key: str
 
+    usage: list[str] = Field(default_factory=list)
+
     description: str | None = None
 
     is_ai_generated: bool = False
