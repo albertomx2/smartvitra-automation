@@ -80,6 +80,9 @@ class BriefOpening(BaseModel):
 class BriefPricing(BaseModel):
     currency: str
 
+    usual_cost: Decimal | None = None
+    discount_total: Decimal | None = None
+
     subtotal: Decimal | None = None
     tax_total: Decimal | None = None
     total: Decimal | None = None

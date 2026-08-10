@@ -201,6 +201,8 @@ class CommercialBriefBuilder:
 
         return BriefPricing(
             currency=proposal.pricing.currency,
+            usual_cost=proposal.pricing.usual_cost,
+            discount_total=proposal.pricing.discount_total,
             subtotal=proposal.pricing.subtotal,
             tax_total=proposal.pricing.tax_total,
             total=proposal.pricing.total,
