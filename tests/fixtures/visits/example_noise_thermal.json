@@ -28,5 +28,28 @@
       "description": "El cliente nota pérdida térmica durante el invierno.",
       "source_text": "También entra algo de frío, sobre todo en el dormitorio."
     }
+  ],
+  "photos": [
+    {
+      "opening_id": "V1",
+      "photo_type": "problem",
+      "storage_key": "visits/S00122/photos/V1/problem_01.jpg",
+      "description": "Ventana exterior afectada por ruido de tráfico.",
+      "original_filename": "IMG_1024.jpg"
+    },
+    {
+      "opening_id": "V2",
+      "photo_type": "overview",
+      "storage_key": "visits/S00122/photos/V2/overview_01.jpg",
+      "description": "Vista general de la ventana del dormitorio.",
+      "original_filename": "IMG_1025.jpg"
+    },
+    {
+      "opening_id": null,
+      "photo_type": "facade",
+      "storage_key": "visits/S00122/photos/general/facade_01.jpg",
+      "description": "Vista exterior de la fachada.",
+      "original_filename": "IMG_1026.jpg"
+    }
   ]
 }

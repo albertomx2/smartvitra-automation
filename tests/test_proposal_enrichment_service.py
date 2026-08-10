@@ -133,3 +133,80 @@ def test_enrichment_input_can_be_loaded_from_json():
     assert enrichment.customer_needs[0].code == CustomerNeedCode.ACOUSTIC_NOISE
 
     assert enrichment.customer_needs[0].priority == 5
+
+
+def test_visit_photos_are_added_to_proposal():
+    from pathlib import Path
+
+    path = Path("tests/fixtures/visits/" "example_noise_thermal.json")
+
+    enrichment = ProposalEnrichmentInput.model_validate_json(
+        path.read_text(encoding="utf-8")
+    )
+
+    proposal = Proposal(
+        customer=Customer(name="Test Customer"),
+        openings=[
+            Opening(id="V1"),
+            Opening(id="V2"),
+        ],
+    )
+
+    service = ProposalEnrichmentService(
+        product_enricher=ProductEnricher(build_default_catalog()),
+        customer_needs_service=(CustomerNeedsService()),
+    )
+
+    enriched = service.enrich(
+        proposal,
+        enrichment,
+    )
+
+    assert len(enriched.photos) == 3
+
+    assert enriched.photos[0].opening_id == "V1"
+
+    assert enriched.photos[0].photo_type.value == "problem"
+
+    assert enriched.photos[2].opening_id is None
+
+    assert enriched.photos[2].photo_type.value == "facade"
+
+
+def test_photo_with_unknown_opening_is_rejected():
+    from backend.enrichment.models import (
+        VisitPhotoInput,
+    )
+
+    proposal = Proposal(
+        customer=Customer(name="Test Customer"),
+        openings=[
+            Opening(id="V1"),
+        ],
+    )
+
+    enrichment = ProposalEnrichmentInput(
+        photos=[
+            VisitPhotoInput(
+                opening_id="V99",
+                photo_type="problem",
+                storage_key="photos/problem.jpg",
+            )
+        ]
+    )
+
+    service = ProposalEnrichmentService(
+        product_enricher=ProductEnricher(build_default_catalog()),
+        customer_needs_service=(CustomerNeedsService()),
+    )
+
+    import pytest
+
+    with pytest.raises(
+        ValueError,
+        match="Unknown opening in photo",
+    ):
+        service.enrich(
+            proposal,
+            enrichment,
+        )

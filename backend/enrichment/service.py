@@ -1,5 +1,7 @@
+from backend.domain.enums import PhotoType
 from backend.domain.proposal import (
     CustomerNeed,
+    Photo,
     Proposal,
 )
 from backend.enrichment.models import (
@@ -41,6 +43,26 @@ class ProposalEnrichmentService:
 
         enriched.customer_needs = [
             self._build_customer_need(selection) for selection in validated_needs
+        ]
+
+        known_opening_ids = {opening.id for opening in enriched.openings}
+
+        for photo in enrichment.photos:
+            if (
+                photo.opening_id is not None
+                and photo.opening_id not in known_opening_ids
+            ):
+                raise ValueError("Unknown opening in photo: " f"{photo.opening_id}")
+
+        enriched.photos = [
+            Photo(
+                opening_id=photo.opening_id,
+                photo_type=PhotoType(photo.photo_type),
+                storage_key=photo.storage_key,
+                description=photo.description,
+                original_filename=photo.original_filename,
+            )
+            for photo in enrichment.photos
         ]
 
         return enriched
