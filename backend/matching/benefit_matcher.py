@@ -76,6 +76,7 @@ class BenefitMatcher:
                 NeedProductMatch(
                     need_code=need.code,
                     need_description=(need.description),
+                    source_text=need.source_text,
                     priority=(need.priority or 1),
                     benefit_categories=sorted(required_categories),
                     matching_products=(matched_products),

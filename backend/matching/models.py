@@ -23,6 +23,8 @@ class NeedProductMatch(BaseModel):
 
     need_description: str
 
+    source_text: str | None = None
+
     priority: int
 
     benefit_categories: list[str] = Field(default_factory=list)
