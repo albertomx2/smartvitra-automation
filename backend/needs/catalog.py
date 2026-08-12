@@ -25,6 +25,19 @@ NEED_DEFINITIONS: dict[
             "thermal",
         ],
     ),
+    CustomerNeedCode.SUMMER_HEAT: CustomerNeedDefinition(
+        code=CustomerNeedCode.SUMMER_HEAT,
+        name="Exceso de calor en verano",
+        description=(
+            "El cliente quiere reducir el "
+            "sobrecalentamiento de la vivienda "
+            "durante los meses cálidos."
+        ),
+        benefit_categories=[
+            "solar_control",
+            "thermal",
+        ],
+    ),
     CustomerNeedCode.CONDENSATION: CustomerNeedDefinition(
         code=CustomerNeedCode.CONDENSATION,
         name="Condensación",
@@ -63,7 +76,7 @@ NEED_DEFINITIONS: dict[
         name="Luminosidad",
         description=("El cliente quiere mejorar la " "entrada de luz natural."),
         benefit_categories=[
-            "light",
+            "daylight",
         ],
     ),
     CustomerNeedCode.AESTHETICS: CustomerNeedDefinition(

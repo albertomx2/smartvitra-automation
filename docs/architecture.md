@@ -46,3 +46,56 @@ Presentation-generation integrations must follow this specification.
 The presentation structure is controlled by the application through a
 `PresentationSpec`; external generative tools must not independently determine
 the SmartVitra commercial narrative.
+
+## Presentation rendering strategies
+
+`PresentationSpec` is renderer-independent.
+
+Current architecture:
+
+CommercialBrief
+    |
+    v
+PresentationSpec
+    |
+    +-----------------------+
+    |                       |
+    v                       v
+PptxRenderer           GammaRenderer
+    |                       |
+    v                       v
+PowerPoint             Gamma presentation
+
+The current primary implementation experiment is `PptxRenderer` because the
+SmartVitra commercial presentation has a strongly standardized 12-slide
+structure.
+
+Gamma remains an optional rendering strategy.
+
+### AI presentation layer
+
+AI is placed before and after deterministic rendering where useful:
+
+PresentationSpec
+    |
+    v
+AIContentGenerator
+    |
+    v
+PptxRenderer
+    |
+    v
+PresentationQA
+    |
+    v
+CorrectionAgent
+    |
+    v
+validated correction actions
+
+The AI agent must not manipulate arbitrary PowerPoint XML or freely modify the
+layout.
+
+See:
+
+`docs/pptx-rendering.md`

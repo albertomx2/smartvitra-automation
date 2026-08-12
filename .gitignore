@@ -43,3 +43,9 @@ postgres_data/
 
 # Real customer documents
 assets/examples/
+
+# Local generated files
+tmp/
+
+# Generated PowerPoint outputs
+experiments/pptx_template/output/

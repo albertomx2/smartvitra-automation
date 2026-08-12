@@ -200,3 +200,41 @@ For every Gamma request record:
 - QA status.
 
 This will allow calculation of the real per-proposal automation cost.
+
+## Current architectural status
+
+Gamma is retained as an optional presentation renderer rather than being
+assumed to be the only production renderer.
+
+The renderer-independent architecture is:
+
+PresentationSpec
+    |
+    +---- PptxRenderer
+    |
+    +---- GammaRenderer
+
+The current development priority is to validate deterministic PowerPoint
+rendering.
+
+Gamma remains strategically relevant because it may provide:
+
+- generative visual adaptation;
+- existing SmartVitra workflow compatibility;
+- API-based generation;
+- template-based generation;
+- automation through platforms such as n8n.
+
+A future production deployment may support both renderers.
+
+Renderer selection may eventually depend on:
+
+- SmartVitra subscription availability;
+- commercial workflow;
+- proposal type;
+- desired generation style;
+- generation cost;
+- QA requirements.
+
+Gamma integration work already developed must therefore be preserved and not
+removed.

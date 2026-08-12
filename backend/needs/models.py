@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 class CustomerNeedCode(str, Enum):
     ACOUSTIC_NOISE = "acoustic_noise"
     THERMAL_LOSS = "thermal_loss"
+    SUMMER_HEAT = "summer_heat"
     CONDENSATION = "condensation"
     VENTILATION = "ventilation"
     SECURITY = "security"

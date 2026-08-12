@@ -842,3 +842,35 @@ Next implementation blocks:
 8. ElevenLabs / avatar integration.
 9. Real-home proposed-solution visual generation.
 10. Odoo / PrefWeb production integrations.
+
+# 10. Rendering and AI correction
+
+The canonical 12-slide structure is independent from the final rendering
+technology.
+
+Current supported architecture:
+
+PresentationSpec
+    |
+    +---- deterministic PPTX template
+    |
+    +---- Gamma template generation
+
+For deterministic PPTX rendering, dynamic text may be produced by an AI content
+layer before rendering.
+
+After rendering, PresentationQA may detect problems such as:
+
+- text too long;
+- unresolved placeholders;
+- missing images;
+- incorrect semantic color;
+- missing required fields.
+
+A controlled correction agent may then generate structured correction actions.
+
+The correction agent must not freely redesign the PowerPoint.
+
+See:
+
+`docs/pptx-rendering.md`
