@@ -56,3 +56,6 @@ var/
 # Local PowerPoint template backups
 /template2.pptx
 experiments/pptx_template/input/template_before_address_fix.pptx
+
+# Local database backups
+backups-db/

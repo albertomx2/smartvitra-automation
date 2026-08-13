@@ -70,14 +70,7 @@ def _fit_text(
     text: str,
     maximum: int,
 ) -> str:
-    """
-    Generic compact-text fitter.
-
-    Suitable for labels, bullets and short
-    non-sentence content.
-    """
-
-    value = _normalize_text(text)
+    value = " ".join(text.split())
 
     if len(value) <= maximum:
         return value
@@ -100,66 +93,81 @@ def _fit_sentence(
     text: str,
     maximum: int,
 ) -> str:
-    """
-    Fit customer-facing prose without leaving
-    a grammatically dangling final connector.
-    """
+    value = " ".join(text.split())
 
-    value = _normalize_text(text)
+    dangling_words = {
+        "a",
+        "al",
+        "con",
+        "de",
+        "del",
+        "donde",
+        "e",
+        "el",
+        "en",
+        "la",
+        "las",
+        "los",
+        "o",
+        "para",
+        "por",
+        "porque",
+        "que",
+        "sin",
+        "su",
+        "sus",
+        "tu",
+        "tus",
+        "y",
+    }
 
+    def close_sentence(
+        candidate: str,
+    ) -> str:
+        words = candidate.rstrip(" ,;:-.!?").split()
+
+        while words and words[-1].lower() in dangling_words:
+            words.pop()
+
+        result = " ".join(words).rstrip(" ,;:-")
+
+        if not result:
+            return ""
+
+        if result[-1] not in ".!?":
+            result += "."
+
+        return result
+
+    # Aunque la frase quepa, rechazamos
+    # finales gramaticalmente colgantes.
     if len(value) <= maximum:
-        return value
+        last_word = value.rstrip(" ,;:-.!?").split()[-1].lower()
 
-    # First preference:
-    # keep a complete sentence already present
-    # before the hard limit.
-    prefix = value[: maximum + 1]
+        if last_word not in dangling_words:
+            return value
 
-    sentence_end = max(
-        prefix.rfind("."),
-        prefix.rfind("!"),
-        prefix.rfind("?"),
-    )
+        return close_sentence(value)
 
-    if sentence_end >= max(
-        20,
-        int(maximum * 0.55),
-    ):
-        return prefix[: sentence_end + 1].strip()
-
-    # Otherwise shorten at a word boundary.
     shortened = value[:maximum].rstrip()
 
-    if " " in shortened:
+    best_sentence_end = max(
+        shortened.rfind("."),
+        shortened.rfind("!"),
+        shortened.rfind("?"),
+    )
+
+    # Si ya existe una oración completa razonablemente
+    # larga, preferimos conservarla completa.
+    if best_sentence_end >= int(maximum * 0.55):
+        shortened = shortened[: best_sentence_end + 1].strip()
+    elif " " in shortened:
         shortened = shortened.rsplit(
             " ",
             1,
         )[0].rstrip()
 
-    shortened = shortened.rstrip(" ,;:-")
-
-    words = shortened.split()
-
-    # Remove connectors/articles that would make
-    # the resulting sentence obviously incomplete.
-    while len(words) > 1 and _last_word(" ".join(words)) in _INCOMPLETE_ENDINGS:
-        words.pop()
-
-    result = " ".join(words).rstrip(" ,;:-")
-
-    # Make the shortened result visibly complete.
-    if result and result[-1] not in ".!?":
-        while len(result) + 1 > maximum and len(words) > 1:
-            words.pop()
-
-            while len(words) > 1 and _last_word(" ".join(words)) in _INCOMPLETE_ENDINGS:
-                words.pop()
-
-            result = " ".join(words).rstrip(" ,;:-")
-
-        result += "."
-
-    return result
+    return close_sentence(shortened)
 
 
 class TemplateV2DeterministicTextFitter:
