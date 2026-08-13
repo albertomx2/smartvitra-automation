@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import time
+import uuid
 
 from backend.db.session import (
     SessionLocal,
@@ -14,6 +15,16 @@ from backend.generation.runner import (
 def run_once() -> bool:
     with SessionLocal() as db:
         return GenerationJobRunner(db).run_next()
+
+
+def run_job(
+    *,
+    job_id: uuid.UUID,
+) -> bool:
+    with SessionLocal() as db:
+        return GenerationJobRunner(db).run_job(
+            job_id=job_id,
+        )
 
 
 def run_forever(
@@ -33,6 +44,12 @@ def main() -> None:
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
+        "--job-id",
+        type=uuid.UUID,
+        default=None,
+    )
+
+    parser.add_argument(
         "--once",
         action="store_true",
     )
@@ -45,10 +62,25 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    if args.job_id is not None:
+        success = run_job(
+            job_id=args.job_id,
+        )
+
+        print(
+            "Generation job success:",
+            success,
+        )
+
+        raise SystemExit(0 if success else 1)
+
     if args.once:
         processed = run_once()
 
-        print("Processed job:" f" {processed}")
+        print(
+            "Processed job:",
+            processed,
+        )
 
         return
 

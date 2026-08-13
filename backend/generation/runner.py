@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import traceback
+import uuid
 
 from sqlalchemy.orm import Session
 
+from backend.db.models.generation import (
+    GenerationJob,
+)
 from backend.generation.context_builder import (
     GenerationContextBuilder,
 )
@@ -31,20 +35,75 @@ class GenerationJobRunner:
     ) -> None:
         self._db = db
 
-        self._repository = GenerationJobRepository(db)
+        self._repository = GenerationJobRepository(
+            db,
+        )
 
-        self._service = GenerationJobService(db)
+        self._service = GenerationJobService(
+            db,
+        )
 
     def run_next(
         self,
     ) -> bool:
+        """
+        Legacy/local worker mode.
+
+        Processes the oldest queued job.
+        Returns False only when there is
+        nothing to process.
+        """
+
         job = self._repository.get_next_queued()
 
         if job is None:
             return False
 
+        self._process_job(
+            job,
+        )
+
+        return True
+
+    def run_job(
+        self,
+        *,
+        job_id: uuid.UUID,
+    ) -> bool:
+        """
+        Process exactly one generation job.
+
+        This is the entry point intended
+        for Cloud Run Jobs.
+        """
+
+        job = self._repository.get(
+            job_id=job_id,
+        )
+
+        if job is None:
+            raise LookupError(f"Generation job " f"{job_id} not found")
+
+        if job.status != "queued":
+            raise RuntimeError(
+                f"Generation job "
+                f"{job_id} has status "
+                f"{job.status!r}; "
+                "expected 'queued'"
+            )
+
+        return self._process_job(
+            job,
+        )
+
+    def _process_job(
+        self,
+        job: GenerationJob,
+    ) -> bool:
         try:
-            self._service.mark_running(job)
+            self._service.mark_running(
+                job,
+            )
 
             self._service.update_progress(
                 job,
@@ -62,7 +121,7 @@ class GenerationJobRunner:
 
             self._service.update_progress(
                 job,
-                step=("building_context"),
+                step="building_context",
                 progress=25,
             )
 
@@ -70,7 +129,7 @@ class GenerationJobRunner:
 
             self._service.update_progress(
                 job,
-                step=("generating_content"),
+                step="generating_content",
                 progress=40,
             )
 
@@ -83,13 +142,16 @@ class GenerationJobRunner:
 
             output_filename = (
                 "SmartVitra_" f"{snapshot.project.alias_number}" ".pptx"
-            ).replace("/", "-")
+            ).replace(
+                "/",
+                "-",
+            )
 
             output_path = work_dir / output_filename
 
             self._service.update_progress(
                 job,
-                step=("rendering_presentation"),
+                step="rendering_presentation",
                 progress=60,
             )
 
@@ -106,7 +168,9 @@ class GenerationJobRunner:
                 progress=90,
             )
 
-            storage_key = storage.persist(path=output_path)
+            storage_key = storage.persist(
+                path=output_path,
+            )
 
             self._service.mark_completed(
                 job,
@@ -124,4 +188,4 @@ class GenerationJobRunner:
                 error=message,
             )
 
-            return True
+            return False

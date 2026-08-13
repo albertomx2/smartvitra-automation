@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import boto3
-from mypy_boto3_s3 import S3Client
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3Client
+else:
+    S3Client = Any
 
 
 class R2StorageClient:
