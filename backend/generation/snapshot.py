@@ -68,6 +68,8 @@ class GenerationProjectSnapshot(BaseModel):
     request_date: str | None = None
     reference: str | None = None
 
+    payment_term: str | None = None
+
     customer_address: str | None = None
     customer_address2: str | None = None
     customer_postal_code: str | None = None

@@ -4,6 +4,9 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
+from backend.generation.payment_terms import (
+    resolve_payment_terms,
+)
 from backend.generation.snapshot import (
     CaseGenerationSnapshot,
 )
@@ -57,12 +60,11 @@ class RealPresentationGenerator:
 
         proposal_date = datetime.now(timezone.utc).date()
 
-        # Temporary business-safe fallback.
+        # Budget validity is not yet available
+        # from the current PrefWeb integration.
         #
-        # The real PrefWeb validity/payment
-        # terms source will replace this.
-        #
-        # We do NOT use made-up percentages.
+        # Payment terms come deterministically
+        # from the real PrefWeb document.
         deterministic = TemplateV2DeterministicData(
             customer_name=(project.customer_name),
             address=address,
@@ -70,7 +72,7 @@ class RealPresentationGenerator:
             proposal_date=(proposal_date),
             budget_amount=Decimal(str(project.final_price)),
             budget_valid_until=None,
-            payment_terms=["Condiciones de pago según presupuesto"],
+            payment_terms=resolve_payment_terms(project.payment_term),
         )
 
         generator = LLMTemplateV2ContentGenerator(GeminiStructuredClient())

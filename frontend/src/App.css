@@ -987,3 +987,181 @@ textarea:focus {
     height: 220px;
   }
 }
+
+/* Generation review and attachments */
+
+.generation-review-panel {
+  position: sticky;
+  bottom: 15px;
+  z-index: 20;
+
+  margin-top: 28px;
+  padding: 22px;
+
+  border: 1px solid #bddfc8;
+  border-radius: 13px;
+
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.generation-review-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.generation-review-header p {
+  margin: 5px 0 0;
+  color: #707985;
+  font-size: 13px;
+}
+
+.generation-attachments {
+  margin-top: 20px;
+}
+
+.generation-attachments-title {
+  margin-bottom: 9px;
+
+  color: #69727d;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.generation-attachment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  padding: 14px;
+
+  border: 1px solid #e0e4e8;
+  border-radius: 10px;
+
+  background: #f8f9fa;
+}
+
+.generation-attachment-main {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 13px;
+}
+
+.generation-file-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  width: 45px;
+  height: 45px;
+
+  border-radius: 8px;
+
+  background: #17202a;
+  color: white;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.generation-file-info {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.generation-file-info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.generation-file-info span {
+  color: #7a838d;
+  font-size: 12px;
+}
+
+.attachment-download-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  padding: 10px 14px;
+
+  border: 1px solid #d4d9de;
+  border-radius: 8px;
+
+  background: white;
+  color: #17202a;
+
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.attachment-download-button:hover {
+  background: #f1f3f5;
+}
+
+.generation-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  margin-top: 18px;
+}
+
+.generation-empty-attachments {
+  padding: 18px;
+
+  border-radius: 9px;
+
+  background: #f7f8fa;
+  color: #808894;
+
+  font-size: 13px;
+  text-align: center;
+}
+
+.review-button {
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .generation-review-header {
+    flex-direction: column;
+  }
+
+  .generation-review-header > button {
+    width: 100%;
+  }
+
+  .generation-attachment {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .attachment-download-button {
+    width: 100%;
+  }
+
+  .generation-review-actions {
+    flex-direction: column;
+  }
+
+  .generation-review-actions > * {
+    width: 100%;
+  }
+}

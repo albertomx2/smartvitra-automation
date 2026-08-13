@@ -106,7 +106,7 @@ class GenerationJobRunner:
                 progress=90,
             )
 
-            storage_key = storage.relative_key(output_path)
+            storage_key = storage.persist(path=output_path)
 
             self._service.mark_completed(
                 job,

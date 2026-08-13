@@ -171,6 +171,7 @@ class GenerationSnapshotBuilder:
                 customer_name=(project.customer_name),
                 request_date=(project.request_date),
                 reference=project.reference,
+                payment_term=(project.payment_term),
                 customer_address=(project.customer_address),
                 customer_address2=(project.customer_address2),
                 customer_postal_code=(project.customer_postal_code),

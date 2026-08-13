@@ -19,7 +19,7 @@ TEMPLATE_V2_TEXT_LIMITS = {
     "sv_s03_solution_4": 26,
     "sv_s03_solution_5": 26,
     "sv_s03_solution_6": 30,
-    "sv_s03_main_benefit": 72,
+    "sv_s03_main_benefit": 90,
     "sv_s03_main_benefit_secondary": 52,
     "sv_s03_benefit_claim": 44,
     # Slide 7

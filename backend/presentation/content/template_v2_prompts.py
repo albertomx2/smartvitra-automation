@@ -97,6 +97,11 @@ Reglas:
 - No uses apellidos.
 - No inventes nombres.
 - Mantén main_benefit dentro del límite indicado.
+- main_benefit debe ser siempre una frase completa y
+  gramaticalmente cerrada.
+- Nunca termines main_benefit con artículos, preposiciones,
+  conjunciones o fragmentos como "con el", "para el",
+  "y", "de", "con" o equivalentes.
 - El mensaje debe conectar las soluciones propuestas
   con los problemas reales expresados por el cliente.
 - Evita lenguaje excesivamente técnico.

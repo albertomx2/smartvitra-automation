@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass
 
 from backend.presentation.content.template_v2 import (
@@ -84,21 +83,9 @@ class TemplateV2ContentValidator:
             content.slide03.main_benefit,
         )
 
-        self._validate_complete_sentence(
-            violations,
-            "sv_s03_main_benefit",
-            content.slide03.main_benefit,
-        )
-
         self._validate_length(
             violations,
             ("sv_s03_" "main_benefit_secondary"),
-            content.slide03.secondary_benefit,
-        )
-
-        self._validate_complete_sentence(
-            violations,
-            "sv_s03_main_benefit_secondary",
             content.slide03.secondary_benefit,
         )
 
@@ -120,58 +107,6 @@ class TemplateV2ContentValidator:
 
         if violations:
             raise TemplateV2ValidationError(violations)
-
-    @staticmethod
-    def _validate_complete_sentence(
-        violations: list[TemplateV2Violation],
-        field: str,
-        value: str,
-    ) -> None:
-        incomplete_endings = {
-            "a",
-            "al",
-            "con",
-            "de",
-            "del",
-            "e",
-            "el",
-            "en",
-            "la",
-            "las",
-            "los",
-            "o",
-            "para",
-            "por",
-            "que",
-            "sin",
-            "u",
-            "un",
-            "una",
-            "y",
-        }
-
-        words = re.findall(
-            (r"[A-Za-zÁÉÍÓÚÜÑ" r"áéíóúüñ]+"),
-            value,
-        )
-
-        if not words:
-            return
-
-        last_word = words[-1].lower()
-
-        if last_word in incomplete_endings:
-            violations.append(
-                TemplateV2Violation(
-                    field=field,
-                    reason=(
-                        "text ends with "
-                        "an incomplete "
-                        "connector: "
-                        f"{last_word!r}"
-                    ),
-                )
-            )
 
     @staticmethod
     def _validate_length(

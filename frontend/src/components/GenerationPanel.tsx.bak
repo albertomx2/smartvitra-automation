@@ -16,14 +16,6 @@ interface GenerationPanelProps {
   caseId: string
 }
 
-interface GenerationAttachment {
-  id: string
-  filename: string
-  kind: "pptx" | "pdf" | "video" | "other"
-  label: string
-  downloadUrl: string
-}
-
 const STEPS = [
   {
     key: "snapshotting",
@@ -60,42 +52,6 @@ function stepIndex(
   )
 }
 
-function buildAttachments(
-  job: GenerationJob,
-): GenerationAttachment[] {
-  if (
-    !job.output_filename ||
-    !job.download_url
-  ) {
-    return []
-  }
-
-  return [
-    {
-      id: "presentation",
-      filename: job.output_filename,
-      kind: "pptx",
-      label: "Presentación comercial",
-      downloadUrl: job.download_url,
-    },
-  ]
-}
-
-function attachmentBadge(
-  kind: GenerationAttachment["kind"],
-): string {
-  switch (kind) {
-    case "pptx":
-      return "PPT"
-    case "pdf":
-      return "PDF"
-    case "video":
-      return "MP4"
-    default:
-      return "FILE"
-  }
-}
-
 export default function GenerationPanel({
   caseId,
 }: GenerationPanelProps) {
@@ -105,16 +61,12 @@ export default function GenerationPanel({
   const [starting, setStarting] =
     useState(false)
 
-  const [reviewing, setReviewing] =
-    useState(false)
-
   const [error, setError] =
     useState<string | null>(null)
 
   async function generate() {
     try {
       setStarting(true)
-      setReviewing(false)
       setError(null)
 
       const created =
@@ -247,102 +199,6 @@ export default function GenerationPanel({
   }
 
   if (job.status === "completed") {
-    const attachments =
-      buildAttachments(job)
-
-    if (reviewing) {
-      return (
-        <section className="generation-review-panel">
-          <div className="generation-review-header">
-            <div>
-              <strong>
-                Revisar propuesta
-              </strong>
-
-              <p>
-                Revisa los archivos generados
-                antes de continuar.
-              </p>
-            </div>
-
-            <button
-              className="secondary-button"
-              onClick={() =>
-                setReviewing(false)
-              }
-            >
-              Cerrar revisión
-            </button>
-          </div>
-
-          <div className="generation-attachments">
-            <div className="generation-attachments-title">
-              Archivos adjuntos
-            </div>
-
-            {attachments.length === 0 ? (
-              <div className="generation-empty-attachments">
-                No hay archivos disponibles.
-              </div>
-            ) : (
-              attachments.map(
-                (attachment) => (
-                  <div
-                    key={attachment.id}
-                    className="generation-attachment"
-                  >
-                    <div className="generation-attachment-main">
-                      <div className="generation-file-badge">
-                        {attachmentBadge(
-                          attachment.kind,
-                        )}
-                      </div>
-
-                      <div className="generation-file-info">
-                        <strong>
-                          {attachment.filename}
-                        </strong>
-
-                        <span>
-                          {attachment.label}
-                        </span>
-                      </div>
-                    </div>
-
-                    <a
-                      className="attachment-download-button"
-                      href={attachment.downloadUrl}
-                    >
-                      Descargar
-                    </a>
-                  </div>
-                ),
-              )
-            )}
-          </div>
-
-          <div className="generation-review-actions">
-            <button
-              className="send-button"
-              disabled
-              title="Se conectará posteriormente con Odoo"
-            >
-              Enviar al cliente
-            </button>
-
-            <button
-              className="secondary-button"
-              onClick={() =>
-                void generate()
-              }
-            >
-              Regenerar
-            </button>
-          </div>
-        </section>
-      )
-    }
-
     return (
       <section className="generation-panel generation-completed">
         <div>
@@ -351,18 +207,29 @@ export default function GenerationPanel({
           </strong>
 
           <p>
-            La propuesta está lista para revisar.
+            {job.output_filename ??
+              "La propuesta está lista para revisar."}
           </p>
         </div>
 
         <div className="generation-actions">
+          {job.download_url && (
+            <a
+              className="review-button"
+              href={job.download_url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Revisar presentación
+            </a>
+          )}
+
           <button
-            className="review-button"
-            onClick={() =>
-              setReviewing(true)
-            }
+            className="send-button"
+            disabled
+            title="Se conectará posteriormente con Odoo"
           >
-            Revisar propuesta
+            Enviar al cliente
           </button>
 
           <button
