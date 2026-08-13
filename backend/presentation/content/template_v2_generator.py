@@ -24,6 +24,9 @@ from backend.presentation.content.template_v2_normalizer import (
 from backend.presentation.content.template_v2_prompts import (
     TEMPLATE_V2_SYSTEM_PROMPT,
 )
+from backend.presentation.content.template_v2_text_fitter import (
+    TemplateV2DeterministicTextFitter,
+)
 from backend.presentation.content.template_v2_validator import (
     TemplateV2ContentValidator,
     TemplateV2ValidationError,
@@ -38,7 +41,7 @@ class TemplateV2DeterministicData:
     proposal_date: date
 
     budget_amount: Decimal
-    budget_valid_until: date
+    budget_valid_until: date | None
 
     payment_terms: list[str]
 
@@ -63,7 +66,6 @@ class LLMTemplateV2ContentGenerator:
             "solar_control",
             "daylight",
             "ventilation",
-            "air_tightness",
             "security",
             "privacy",
             "durability",
@@ -72,11 +74,24 @@ class LLMTemplateV2ContentGenerator:
             "aesthetics",
             "comfort",
             "humidity",
-            "weather_protection",
         ]
+
+        customer_name = str(
+            context.get(
+                "customer",
+                {},
+            ).get(
+                "name",
+                "",
+            )
+            or ""
+        ).strip()
+
+        customer_first_name = customer_name.split()[0] if customer_name else None
 
         payload = {
             "customer_context": context,
+            "customer_first_name": customer_first_name,
             "allowed_icon_keys": allowed_icon_keys,
             "text_limits": {
                 "slide01_intro": (TEMPLATE_V2_TEXT_LIMITS["sv_s01_intro_text"]),
@@ -137,6 +152,8 @@ class LLMTemplateV2ContentGenerator:
 
             content = normalizer.normalize(content)
 
+            content = TemplateV2DeterministicTextFitter().fit(content)
+
             try:
                 validator.validate(content)
 
@@ -175,6 +192,8 @@ class LLMTemplateV2ContentGenerator:
                     "budget_amount": (self._format_eur(deterministic.budget_amount)),
                     "budget_valid_until": (
                         deterministic.budget_valid_until.strftime("%d/%m/%y")
+                        if deterministic.budget_valid_until is not None
+                        else "Consultar"
                     ),
                     "payment_terms": (deterministic.payment_terms),
                 },

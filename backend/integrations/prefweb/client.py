@@ -185,27 +185,32 @@ class PrefWebClient:
     ) -> list[PrefWebSalesDocumentSummary]:
         self.ensure_login()
 
-        safe_query = query.replace(
-            "'",
-            "''",
-        )
+        query = query.strip()
 
-        filter_expression = (
-            "("
-            f"AliasNumber~contains~'{safe_query}'"
-            "~or~"
-            f"CustomerName~contains~'{safe_query}'"
-            "~or~"
-            f"CustomerNif~contains~'{safe_query}'"
-            "~or~"
-            f"ShippingWork~contains~'{safe_query}'"
-            ")"
-        )
+        if query:
+            safe_query = query.replace(
+                "'",
+                "''",
+            )
+
+            filter_expression = (
+                "("
+                f"AliasNumber~contains~'{safe_query}'"
+                "~or~"
+                f"CustomerName~contains~'{safe_query}'"
+                "~or~"
+                f"CustomerNif~contains~'{safe_query}'"
+                "~or~"
+                f"ShippingWork~contains~'{safe_query}'"
+                ")"
+            )
+        else:
+            filter_expression = ""
 
         response = self._session.post(
             (f"{self.BASE_URL}/" "SalesDocuments/" "ReadToDataSourceResult"),
             data={
-                "sort": "",
+                "sort": "RequestDate-desc",
                 "page": page,
                 "pageSize": page_size,
                 "group": "",
@@ -234,7 +239,11 @@ class PrefWebClient:
                     alias_number=str(item["AliasNumber"]),
                     version=int(item["Version"]),
                     version_name=str(item["VersionName"]),
-                    customer_code=(item.get("CustomerCode")),
+                    customer_code=(
+                        str(item["CustomerCode"])
+                        if item.get("CustomerCode") is not None
+                        else None
+                    ),
                     customer_name=str(item["CustomerName"]),
                     request_date=(item.get("RequestDate")),
                     shipping_work=(item.get("ShippingWork")),

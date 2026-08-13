@@ -48,6 +48,42 @@ class PrefWebService:
             number=number,
         )
 
+    def get_project_by_number(
+        self,
+        *,
+        number: int,
+        version: int,
+    ) -> PrefWebProject:
+        self._client.ensure_login()
+
+        html = self._client.get_sales_document_html(
+            number=number,
+            version=version,
+        )
+
+        document = self._parser.parse(
+            html,
+        )
+
+        return self._build_project_without_summary(
+            document=document,
+        )
+
+    def get_window_svg(
+        self,
+        *,
+        number: int,
+        version: int,
+        item_id: str,
+    ) -> str:
+        self._client.ensure_login()
+
+        return self._client.get_sales_item_svg(
+            number=number,
+            version=version,
+            item_id=item_id,
+        )
+
     def get_project(
         self,
         *,
@@ -73,6 +109,8 @@ class PrefWebService:
             request_date=(document.request_date),
             reference=document.reference,
             customer_address=(document.customer.address or summary.customer_address),
+            customer_address2=(document.customer.address2),
+            customer_postal_code=(document.customer.postal_code),
             customer_city=(document.customer.city or summary.customer_city),
             customer_country=(document.customer.country or summary.customer_country),
             subtotal=summary.subtotal,
@@ -118,6 +156,8 @@ class PrefWebService:
             request_date=(document.request_date),
             reference=document.reference,
             customer_address=(document.customer.address),
+            customer_address2=(document.customer.address2),
+            customer_postal_code=(document.customer.postal_code),
             customer_city=(document.customer.city),
             customer_country=(document.customer.country),
             subtotal=subtotal,

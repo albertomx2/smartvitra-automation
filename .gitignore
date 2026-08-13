@@ -49,3 +49,10 @@ tmp/
 
 # Generated PowerPoint outputs
 experiments/pptx_template/output/
+
+# Runtime files
+var/
+
+# Local PowerPoint template backups
+/template2.pptx
+experiments/pptx_template/input/template_before_address_fix.pptx

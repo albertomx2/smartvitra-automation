@@ -77,33 +77,180 @@ No copies estos ejemplos salvo que los datos realmente lo sustenten.
 
 SLIDE 3 — NUESTRA PROPUESTA
 
-Genera entre 1 y 6 soluciones técnicas/comerciales reales.
+PERSONALIZACIÓN DE LA PROPUESTA
+
+El bloque main_benefit debe dirigirse personalmente
+al cliente utilizando exactamente customer_first_name
+cuando ese campo tenga valor.
+
+Ejemplo de estilo:
+"Alberto, queremos que disfrutes de un hogar más tranquilo y confortable."
+
+El ejemplo anterior expresa únicamente el tono.
+NO copies sus beneficios si no corresponden a las
+necesidades reales del cliente.
+
+Reglas:
+- Usa el nombre de pila solo una vez en este bloque.
+- El nombre debe aparecer de forma natural, no como
+  una etiqueta independiente.
+- No uses apellidos.
+- No inventes nombres.
+- Mantén main_benefit dentro del límite indicado.
+- El mensaje debe conectar las soluciones propuestas
+  con los problemas reales expresados por el cliente.
+- Evita lenguaje excesivamente técnico.
+- No introduzcas prestaciones, cifras o características
+  que no estén sustentadas por los datos disponibles.
+
+
+
+Esta slide NO debe ser una enumeración de las ventanas
+presupuestadas.
+
+Su objetivo es traducir los problemas y necesidades reales
+detectados en la vivienda en una propuesta comercial clara,
+breve y orientada al cliente.
+
+Genera entre 1 y 6 soluciones.
+
+IMPORTANTE:
+El número de soluciones NO depende del número de ventanas.
+No generes una solución por cada ventana.
+
+Debes analizar conjuntamente:
+- los problemas detectados;
+- las notas del comercial;
+- las estancias afectadas;
+- las ventanas y cerramientos incluidos en la propuesta;
+- cualquier otra información real disponible en el contexto.
+
+A partir de esa información, identifica las mejoras que la
+propuesta busca aportar a la vivienda.
+
+Las soluciones deben ser conceptos comerciales breves como,
+por ejemplo:
+
+- mayor aislamiento acústico;
+- mejor aislamiento térmico;
+- vidrio orientado al confort térmico;
+- mayor estanqueidad;
+- ventilación más controlada;
+- mayor seguridad;
+- mejor privacidad;
+- más luminosidad;
+- mayor confort durante todo el año;
+- cerramientos de mejores prestaciones.
+
+Estos ejemplos muestran únicamente el NIVEL DE ABSTRACCIÓN
+y el tono esperado. No debes copiarlos automáticamente.
+
+Selecciona las soluciones que tengan sentido específicamente
+para los problemas y la propuesta real de este cliente.
+
+Puedes deducir soluciones generales y razonables directamente
+relacionadas con el problema detectado.
+
+Por ejemplo:
+- si el cliente sufre ruido exterior, la propuesta puede
+  expresarse como una mejora del aislamiento acústico;
+- si el cliente sufre demasiado frío o calor, puede expresarse
+  como una mejora del aislamiento o del confort térmico;
+- si existen infiltraciones de aire, puede expresarse como
+  mayor estanqueidad;
+- si existe un problema relacionado con ventilación, puede
+  expresarse como una ventilación más controlada.
+
+NO necesitas que exista literalmente una característica con
+ese mismo nombre en los datos para expresar estas mejoras
+generales.
+
+Sin embargo, NO inventes especificaciones técnicas concretas.
+
+Está prohibido inventar:
+- valores de aislamiento en dB;
+- transmitancias térmicas;
+- espesores;
+- número de cámaras;
+- composiciones de vidrio;
+- gases;
+- clases de seguridad;
+- marcas;
+- modelos;
+- materiales concretos que no aparezcan en los datos;
+- certificaciones;
+- prestaciones cuantitativas;
+- cualquier característica técnica específica no presente
+  en la información suministrada.
+
+Por tanto, puedes decir:
+"Mayor aislamiento acústico"
+
+pero NO:
+"Aislamiento acústico de 48 dB"
+
+salvo que ese dato aparezca explícitamente en el contexto.
+
+Puedes decir:
+"Vidrio orientado al confort térmico"
+
+pero NO:
+"Triple vidrio bajo emisivo con argón"
+
+si esa configuración no aparece en los datos.
+
+Cada solución debe:
+- ser breve;
+- ser comprensible para un cliente no técnico;
+- describir una mejora o capacidad de la propuesta;
+- relacionarse con una necesidad real detectada;
+- evitar repetir la misma idea con palabras diferentes;
+- evitar mencionar la estancia salvo que sea imprescindible;
+- evitar copiar literalmente las notas del comercial;
+- evitar sonar como una lista de referencias de producto.
+
+Prioriza las necesidades más importantes.
+
+Si varios problemas están estrechamente relacionados,
+puedes resolverlos mediante una misma solución.
+
+Si un problema justifica varias mejoras diferentes,
+puedes generar más de una solución.
+
+No rellenes hasta seis por obligación.
+Usa solamente las que aporten información útil.
 
 Cada solución tiene:
 - text
 - icon_key
 
-El icon_key debe pertenecer exclusivamente al catálogo permitido
-incluido en los datos de entrada.
+El campo text debe contener únicamente el nombre comercial
+breve de la solución.
 
-Cada solución debe poder justificarse a partir de productos,
-vidrios, configuraciones, servicios o características presentes
-en la propuesta.
+Ejemplos de estilo:
+"Aislamiento acústico"
+"Confort térmico"
+"Mayor estanqueidad"
+"Ventilación controlada"
 
-No uses necesidades no cubiertas como si la propuesta las
-solucionara.
+No escribas explicaciones largas dentro de text.
 
-Genera además:
+El icon_key debe pertenecer exclusivamente al catálogo
+permitido incluido en los datos de entrada y debe representar
+semánticamente la solución elegida.
 
-main_benefit:
-beneficio principal comercial de la propuesta.
+main_benefit debe resumir el principal beneficio global de
+la propuesta para este cliente.
 
-secondary_benefit:
-beneficio secundario complementario.
+secondary_benefit debe expresar una segunda consecuencia
+positiva relevante.
 
-benefit_claim:
-claim corto, potente y en mayúsculas. Puede reunir varios
-beneficios reales de la propuesta.
+benefit_claim debe ser una frase comercial breve y potente
+derivada de los problemas reales del cliente y de las mejoras
+propuestas.
+
+No inventes problemas, prestaciones técnicas ni características
+que no puedan justificarse por los datos reales de entrada.
 
 SLIDE 7 — RESUMEN DEL PROYECTO
 

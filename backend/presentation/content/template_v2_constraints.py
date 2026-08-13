@@ -11,7 +11,7 @@ TEMPLATE_V2_TEXT_LIMITS = {
     "sv_s02_issue_3": 55,
     "sv_s02_issue_4": 55,
     "sv_s02_issue_5": 55,
-    "sv_s02_issue_6": 48,
+    "sv_s02_issue_6": 34,
     # Slide 3
     "sv_s03_solution_1": 32,
     "sv_s03_solution_2": 32,

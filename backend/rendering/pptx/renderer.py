@@ -506,8 +506,6 @@ class PowerPointRenderer:
             rendered = ""
         elif len(words) == 1:
             rendered = words[0]
-        elif len(words) == 2:
-            rendered = f"{words[0]}\n" f"{words[1]}"
         else:
             best_split = 1
             best_difference = None
@@ -517,12 +515,14 @@ class PowerPointRenderer:
                 len(words),
             ):
                 first = " ".join(words[:index])
+
                 second = " ".join(words[index:])
 
                 difference = abs(len(first) - len(second))
 
                 if best_difference is None or difference < best_difference:
                     best_difference = difference
+
                     best_split = index
 
             rendered = (
@@ -532,12 +532,12 @@ class PowerPointRenderer:
         paragraphs = text_frame.paragraphs
 
         if not paragraphs:
-            raise ValueError(f"{shape_name} contains no paragraph")
+            raise ValueError(f"{shape_name} contains " "no paragraph")
 
         first_paragraph = paragraphs[0]
 
         if not first_paragraph.runs:
-            raise ValueError(f"{shape_name} has no template run")
+            raise ValueError(f"{shape_name} has " "no template run")
 
         first_run = first_paragraph.runs[0]
 
@@ -552,7 +552,7 @@ class PowerPointRenderer:
 
         text_frame.auto_size = MSO_AUTO_SIZE.NONE
 
-        text_frame.word_wrap = False
+        text_frame.word_wrap = True
 
     def lock_text_box_geometry(
         self,

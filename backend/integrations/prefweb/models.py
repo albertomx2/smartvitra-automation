@@ -99,6 +99,8 @@ class PrefWebSalesDocumentSummary(BaseModel):
 
     customer_nif: str | None = None
     customer_address: str | None = None
+    customer_address2: str | None = None
+    customer_postal_code: str | None = None
     customer_city: str | None = None
     customer_country: str | None = None
 
@@ -148,6 +150,8 @@ class PrefWebProject(BaseModel):
     reference: str | None = None
 
     customer_address: str | None = None
+    customer_address2: str | None = None
+    customer_postal_code: str | None = None
     customer_city: str | None = None
     customer_country: str | None = None
 
