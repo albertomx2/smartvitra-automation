@@ -41,5 +41,6 @@ python-multipart==0.0.32
 boto3==1.43.70
 Pillow==12.3.0
 requests==2.34.2
-Pillow==12.3.0
-requests==2.34.2
+google-cloud-run==0.16.1
+firebase-admin==7.5.0
+CairoSVG==2.9.0

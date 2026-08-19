@@ -2,6 +2,7 @@ import {
   useEffect,
   useState,
 } from "react"
+import { downloadAuthenticatedFile } from "../api/client"
 
 import {
   createGenerationJob,
@@ -311,7 +312,15 @@ export default function GenerationPanel({
 
                     <a
                       className="attachment-download-button"
-                      href={attachment.downloadUrl}
+                      href="#"
+                      onClick={async (event) => {
+                        event.preventDefault()
+
+                        await downloadAuthenticatedFile(
+                          attachment.downloadUrl,
+                          attachment.filename,
+                        )
+                      }}
                     >
                       Descargar
                     </a>

@@ -12,6 +12,9 @@ from fastapi import (
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from backend.cloud.generation_launcher import (
+    GenerationLauncher,
+)
 from backend.db.session import get_db
 from backend.generation.schemas import (
     GenerationJobRead,
@@ -67,10 +70,32 @@ def create_generation_job(
         job = service.create_job(
             case_id=case_id,
         )
+
+        GenerationLauncher().launch(
+            job_id=job.id,
+        )
+
     except GenerationCaseNotFoundError as exc:
         raise HTTPException(
             status_code=404,
             detail=str(exc),
+        ) from exc
+
+    except Exception as exc:
+        if "job" in locals():
+            service.mark_failed(
+                job,
+                error=(
+                    "Could not launch "
+                    "generation execution: "
+                    f"{type(exc).__name__}: "
+                    f"{exc}"
+                ),
+            )
+
+        raise HTTPException(
+            status_code=503,
+            detail=("Could not launch " "generation execution"),
         ) from exc
 
     return _to_read(job)

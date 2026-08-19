@@ -13,8 +13,24 @@ from backend.generation.snapshot import (
 from backend.integrations.google_maps.street_view import (
     GoogleStreetViewFacadeClient,
 )
+from backend.integrations.image_generation.prefweb_reference import (
+    render_prefweb_svg_reference,
+)
+from backend.integrations.image_generation.prompts import (
+    build_solution_image_prompt,
+)
+from backend.integrations.image_generation.scene_selector import (
+    SolutionImageScene,
+    SolutionImageSceneSelector,
+)
+from backend.integrations.image_generation.vertex import (
+    VertexSolutionImageClient,
+)
 from backend.integrations.llm.gemini import (
     GeminiStructuredClient,
+)
+from backend.integrations.prefweb.service import (
+    PrefWebService,
 )
 from backend.presentation.content.template_v2_generator import (
     LLMTemplateV2ContentGenerator,
@@ -127,9 +143,37 @@ class RealPresentationGenerator:
 
         photo_paths = self._get_real_photo_paths(snapshot)
 
-        # Visit photo:
-        # real current-state/problem image.
-        if photo_paths:
+        # Select one real customer/window scene.
+        #
+        # This exact scene is used for BOTH:
+        # - slide 2: current/problem photograph;
+        # - slide 3: AI-generated proposed result.
+        #
+        # Therefore the AI transformation always corresponds
+        # to the same PrefWeb window as the displayed photo.
+        scene = SolutionImageSceneSelector().select(
+            snapshot,
+        )
+
+        source_photo: Path | None = None
+
+        if scene is not None:
+            source_photo = self._get_scene_photo_path(
+                scene,
+            )
+
+        if scene is not None and source_photo is not None:
+            result["problem_photo"] = source_photo
+
+            result["generated_solution"] = self._generate_solution_image(
+                snapshot=snapshot,
+                scene=scene,
+                source_photo=source_photo,
+                work_dir=work_dir,
+            )
+        elif photo_paths:
+            # Legacy fallback when no window has both
+            # problem metadata and a linked photograph.
             result["problem_photo"] = photo_paths[0]
 
         # Related SmartVitra projects:
@@ -160,11 +204,61 @@ class RealPresentationGenerator:
         elif photo_paths:
             result["cover_photo"] = photo_paths[0]
 
-        # Do NOT fabricate AI result images yet.
-        # Those slots will be wired to the future
-        # image-generation stage.
-
         return result
+
+    @staticmethod
+    def _get_scene_photo_path(
+        scene: SolutionImageScene,
+    ) -> Path | None:
+        storage = LocalFileStorage()
+
+        path = storage.get_path(
+            storage_key=scene.photo.storage_key,
+        )
+
+        if not path.exists():
+            return None
+
+        return path
+
+    @staticmethod
+    def _generate_solution_image(
+        *,
+        snapshot: CaseGenerationSnapshot,
+        scene: SolutionImageScene,
+        source_photo: Path,
+        work_dir: Path,
+    ) -> Path:
+        solution_dir = work_dir / "solution_image"
+
+        solution_dir.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        prefweb = PrefWebService()
+
+        svg = prefweb.get_window_svg(
+            number=snapshot.project.number,
+            version=snapshot.project.version,
+            item_id=scene.window.prefweb_item_id,
+        )
+
+        reference_path = render_prefweb_svg_reference(
+            svg=svg,
+            output_path=(solution_dir / "prefweb_window_reference.png"),
+        )
+
+        prompt = build_solution_image_prompt(
+            window=scene.window,
+        )
+
+        return VertexSolutionImageClient().generate(
+            source_photo=source_photo,
+            window_reference=reference_path,
+            prompt=prompt,
+            output_path=(solution_dir / "generated_solution.png"),
+        )
 
     @staticmethod
     def _get_real_photo_paths(

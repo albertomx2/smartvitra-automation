@@ -1,0 +1,73 @@
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: #f5f7f8;
+}
+
+.auth-card {
+  width: min(440px, 100%);
+  padding: 42px;
+  border-radius: 20px;
+  background: white;
+  box-shadow:
+    0 18px 50px
+    rgba(0, 0, 0, 0.08);
+}
+
+.auth-brand {
+  margin-bottom: 28px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #168244;
+}
+
+.auth-card h1 {
+  margin: 0 0 14px;
+  font-size: 30px;
+}
+
+.auth-card p {
+  margin-bottom: 28px;
+  line-height: 1.6;
+  color: #5a6168;
+}
+
+.auth-button {
+  width: 100%;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: #168244;
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-error {
+  margin-top: 18px;
+  color: #b42318;
+}
+
+.auth-session {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 24px;
+  font-size: 13px;
+  background: #f5f7f8;
+  color: #5a6168;
+}
+
+.auth-session button {
+  border: 0;
+  background: transparent;
+  color: #168244;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}

@@ -1,3 +1,5 @@
+import { auth } from "../firebase"
+
 import type {
   ReferencePhoto,
   ReferenceSelection,
@@ -11,20 +13,57 @@ import type {
   WorkspaceWindow,
 } from "./types"
 
+async function authenticatedHeaders(
+  headers?: HeadersInit,
+): Promise<Headers> {
+  const result =
+    new Headers(headers)
+
+  const user =
+    auth.currentUser
+
+  if (user) {
+    const token =
+      await user.getIdToken()
+
+    result.set(
+      "Authorization",
+      `Bearer ${token}`,
+    )
+  }
+
+  return result
+}
+
 async function request<T>(
   url: string,
   options?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(url, options)
+  const headers =
+    await authenticatedHeaders(
+      options?.headers,
+    )
+
+  const response =
+    await fetch(
+      url,
+      {
+        ...options,
+        headers,
+      },
+    )
 
   if (!response.ok) {
-    let message = `HTTP ${response.status}`
+    let message =
+      `HTTP ${response.status}`
 
     try {
-      const data = await response.json()
+      const data =
+        await response.json()
 
       if (data.detail) {
-        message = data.detail
+        message =
+          data.detail
       }
     } catch {
       // Ignore invalid JSON errors.
@@ -127,10 +166,14 @@ export async function uploadPhoto(
   form.append("file", file)
   form.append("window_id", windowId)
 
+  const headers =
+    await authenticatedHeaders()
+
   const response = await fetch(
     `/api/cases/${caseId}/photos`,
     {
       method: "POST",
+      headers,
       body: form,
     },
   )
@@ -157,10 +200,14 @@ export async function deletePhoto(
   caseId: string,
   photoId: string,
 ): Promise<void> {
+  const headers =
+    await authenticatedHeaders()
+
   const response = await fetch(
     `/api/cases/${caseId}/photos/${photoId}`,
     {
       method: "DELETE",
+      headers,
     },
   )
 
@@ -263,10 +310,14 @@ export async function removeReferencePhoto(
   caseId: string,
   slot: number,
 ): Promise<void> {
+  const headers =
+    await authenticatedHeaders()
+
   const response = await fetch(
     `/api/cases/${caseId}/reference-photos/${slot}`,
     {
       method: "DELETE",
+      headers,
     },
   )
 
@@ -296,4 +347,81 @@ export async function uploadReferencePhoto(
       body: form,
     },
   )
+}
+
+export async function fetchAuthenticatedBlob(
+  url: string,
+): Promise<Blob> {
+  const headers =
+    await authenticatedHeaders()
+
+  const response =
+    await fetch(
+      url,
+      {
+        headers,
+      },
+    )
+
+  if (!response.ok) {
+    let message =
+      `HTTP ${response.status}`
+
+    try {
+      const data =
+        await response.json()
+
+      if (data.detail) {
+        message =
+          data.detail
+      }
+    } catch {
+      // Ignore invalid JSON errors.
+    }
+
+    throw new Error(message)
+  }
+
+  return response.blob()
+}
+
+export async function createAuthenticatedObjectUrl(
+  url: string,
+): Promise<string> {
+  const blob =
+    await fetchAuthenticatedBlob(url)
+
+  return URL.createObjectURL(blob)
+}
+
+export async function downloadAuthenticatedFile(
+  url: string,
+  filename: string,
+): Promise<void> {
+  const blob =
+    await fetchAuthenticatedBlob(url)
+
+  const objectUrl =
+    URL.createObjectURL(blob)
+
+  try {
+    const anchor =
+      document.createElement("a")
+
+    anchor.href =
+      objectUrl
+
+    anchor.download =
+      filename
+
+    document.body.appendChild(anchor)
+
+    anchor.click()
+
+    anchor.remove()
+  } finally {
+    URL.revokeObjectURL(
+      objectUrl,
+    )
+  }
 }

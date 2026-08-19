@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from backend.api.auth import router as auth_router
 from backend.api.cases import router as cases_router
 from backend.api.generation import router as generation_router
 from backend.api.reference_photos import (
@@ -13,6 +14,7 @@ from backend.api.reference_photos import (
 )
 from backend.api.routes.health import router as health_router
 from backend.api.routes.prefweb import router as prefweb_router
+from backend.auth.firebase import require_user
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
@@ -28,18 +30,32 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
 
     app.include_router(
-        prefweb_router,
-        prefix="/api/prefweb",
+        auth_router,
     )
 
-    app.include_router(cases_router)
+    protected_dependencies = [
+        Depends(require_user),
+    ]
+
+    app.include_router(
+        prefweb_router,
+        prefix="/api/prefweb",
+        dependencies=protected_dependencies,
+    )
+
+    app.include_router(
+        cases_router,
+        dependencies=protected_dependencies,
+    )
 
     app.include_router(
         generation_router,
+        dependencies=protected_dependencies,
     )
 
     app.include_router(
         reference_photos_router,
+        dependencies=protected_dependencies,
     )
 
     if FRONTEND_DIST.exists():

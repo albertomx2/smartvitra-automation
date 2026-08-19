@@ -24,6 +24,7 @@ import GenerationPanel from "./components/GenerationPanel"
 import ReferencePhotoSelector from "./components/ReferencePhotoSelector"
 
 import "./App.css"
+import AuthenticatedImage from "./components/AuthenticatedImage"
 
 type SaveStatus =
   | "idle"
@@ -858,7 +859,7 @@ function WindowCard({
 
       <div className="window-grid">
         <div className="window-preview">
-          <img
+          <AuthenticatedImage
             src={
               window.prefweb_svg_url
             }
@@ -1076,7 +1077,7 @@ function WindowCard({
                     photo.id
                   }
                 >
-                  <img
+                  <AuthenticatedImage
                     src={
                       photo.file_url
                     }

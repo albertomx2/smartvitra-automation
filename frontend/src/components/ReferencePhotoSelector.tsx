@@ -2,6 +2,7 @@ import {
   useEffect,
   useState,
 } from "react"
+import AuthenticatedImage from "./AuthenticatedImage"
 
 import {
   confirmReferencePhotos,
@@ -250,7 +251,7 @@ function ReferencePhotoSelector({
 
                 {selection ? (
                   <>
-                    <img
+                    <AuthenticatedImage
                       src={
                         selection
                           .photo
@@ -367,7 +368,7 @@ function ReferencePhotoSelector({
                               )
                             }
                           >
-                            <img
+                            <AuthenticatedImage
                               src={
                                 photo.file_url
                               }
