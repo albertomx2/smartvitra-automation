@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -32,6 +33,9 @@ from backend.integrations.llm.gemini import (
 from backend.integrations.prefweb.service import (
     PrefWebService,
 )
+from backend.presentation.content.template_v2 import (
+    TemplateV2PresentationContent,
+)
 from backend.presentation.content.template_v2_generator import (
     LLMTemplateV2ContentGenerator,
     TemplateV2DeterministicData,
@@ -59,6 +63,12 @@ from backend.storage.reference import (
 )
 
 
+@dataclass(frozen=True)
+class PresentationGenerationResult:
+    path: Path
+    content: TemplateV2PresentationContent
+
+
 class RealPresentationGenerator:
     TEMPLATE = Path("experiments/pptx_template/" "input/template.pptx")
 
@@ -69,7 +79,7 @@ class RealPresentationGenerator:
         context: dict,
         output_path: Path,
         work_dir: Path,
-    ) -> Path:
+    ) -> PresentationGenerationResult:
         project = snapshot.project
 
         address = self._build_address(snapshot)
@@ -131,7 +141,10 @@ class RealPresentationGenerator:
 
         renderer.save(output_path)
 
-        return output_path
+        return PresentationGenerationResult(
+            path=output_path,
+            content=content,
+        )
 
     def _build_images(
         self,

@@ -16,7 +16,11 @@ from backend.cloud.generation_launcher import (
     GenerationLauncher,
 )
 from backend.db.session import get_db
+from backend.generation.artifact_repository import (
+    GenerationArtifactRepository,
+)
 from backend.generation.schemas import (
+    GenerationArtifactRead,
     GenerationJobRead,
 )
 from backend.generation.service import (
@@ -40,17 +44,42 @@ DbSession = Annotated[
 
 def _to_read(
     job,
+    db: Session,
 ) -> GenerationJobRead:
     download_url = None
 
     if job.status == "completed" and job.output_storage_key:
         download_url = f"/api/generation-jobs/" f"{job.id}/file"
 
-    result = GenerationJobRead.model_validate(job)
+    artifact_models = GenerationArtifactRepository(
+        db,
+    ).list_for_job(
+        generation_job_id=job.id,
+    )
+
+    artifacts = [
+        GenerationArtifactRead.model_validate(
+            artifact,
+        ).model_copy(
+            update={
+                "download_url": (
+                    f"/api/generation-jobs/"
+                    f"{job.id}/artifacts/"
+                    f"{artifact.id}/file"
+                )
+            }
+        )
+        for artifact in artifact_models
+    ]
+
+    result = GenerationJobRead.model_validate(
+        job,
+    )
 
     return result.model_copy(
         update={
             "download_url": download_url,
+            "artifacts": artifacts,
         }
     )
 
@@ -98,7 +127,7 @@ def create_generation_job(
             detail=("Could not launch " "generation execution"),
         ) from exc
 
-    return _to_read(job)
+    return _to_read(job, db)
 
 
 @router.get(
@@ -121,7 +150,7 @@ def get_generation_job(
             detail=str(exc),
         ) from exc
 
-    return _to_read(job)
+    return _to_read(job, db)
 
 
 @router.get(
@@ -169,4 +198,62 @@ def get_generation_file(
             "presentationml.presentation"
         ),
         filename=(job.output_filename or "SmartVitra.pptx"),
+    )
+
+
+@router.get(
+    "/api/generation-jobs/" "{job_id}/artifacts/" "{artifact_id}/file",
+)
+def get_generation_artifact_file(
+    job_id: uuid.UUID,
+    artifact_id: uuid.UUID,
+    db: DbSession,
+) -> FileResponse:
+    service = GenerationJobService(db)
+
+    try:
+        job = service.get_job(
+            job_id=job_id,
+        )
+    except GenerationJobNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    if job.status != "completed":
+        raise HTTPException(
+            status_code=409,
+            detail=("Generation is not completed"),
+        )
+
+    artifact = GenerationArtifactRepository(
+        db,
+    ).get(
+        artifact_id=artifact_id,
+        generation_job_id=job.id,
+    )
+
+    if artifact is None:
+        raise HTTPException(
+            status_code=404,
+            detail=("Generated artifact not found"),
+        )
+
+    storage = GeneratedFileStorage()
+
+    path = storage.get_path(
+        storage_key=artifact.storage_key,
+    )
+
+    if not path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=("Generated artifact file " "not found"),
+        )
+
+    return FileResponse(
+        path=path,
+        media_type=artifact.content_type,
+        filename=artifact.filename,
     )

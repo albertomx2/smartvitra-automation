@@ -8,6 +8,7 @@ __all__ = [
     "CasePhoto",
     "CaseReferenceSelection",
     "CaseWindow",
+    "GenerationArtifact",
     "GenerationJob",
     "ProjectCase",
     "ReferencePhoto",
@@ -15,6 +16,7 @@ __all__ = [
 
 
 from backend.db.models.generation import (
+    GenerationArtifact,
     GenerationJob,
 )
 from backend.db.models.reference_photo import (

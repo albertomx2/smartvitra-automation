@@ -13,6 +13,9 @@ from backend.db.models.generation import (
     GenerationJob,
 )
 from backend.db.session import SessionLocal
+from backend.generation.video.font_normalizer import (
+    normalize_pptx_fonts,
+)
 from backend.storage.generated import (
     GeneratedFileStorage,
 )
@@ -290,10 +293,23 @@ def main() -> None:
         sum(durations),
     )
 
+    normalized_presentation_path = output_root / "presentation_for_video.pptx"
+
+    font_counts = normalize_pptx_fonts(
+        source_path=presentation_path,
+        output_path=normalized_presentation_path,
+    )
+
+    print()
+    print("Fuentes normalizadas:")
+
+    for font, count in font_counts.items():
+        print(f"  {font}: {count}")
+
     slide_dir = output_root / "slides"
 
     slides = render_presentation(
-        presentation_path=(presentation_path),
+        presentation_path=(normalized_presentation_path),
         render_dir=slide_dir,
     )
 

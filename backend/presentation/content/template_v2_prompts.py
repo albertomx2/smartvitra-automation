@@ -250,6 +250,14 @@ la propuesta para este cliente.
 secondary_benefit debe expresar una segunda consecuencia
 positiva relevante.
 
+secondary_benefit debe ser siempre una frase completa,
+natural y semánticamente cerrada.
+
+Debe respetar estrictamente el límite de caracteres
+proporcionado. Si una formulación no cabe, reescríbela
+de forma más breve: nunca dependas de que el sistema
+recorte posteriormente el texto.
+
 benefit_claim debe ser una frase comercial breve y potente
 derivada de los problemas reales del cliente y de las mejoras
 propuestas.

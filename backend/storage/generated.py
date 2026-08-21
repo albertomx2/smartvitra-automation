@@ -61,6 +61,7 @@ class GeneratedFileStorage:
         self,
         *,
         path: Path,
+        content_type: str | None = None,
     ) -> str:
         if not path.exists():
             raise FileNotFoundError(path)
@@ -71,13 +72,11 @@ class GeneratedFileStorage:
             assert self._r2 is not None
 
             self._r2.upload_file(
-                storage_key=(self._remote_key(storage_key)),
-                path=path,
-                content_type=(
-                    "application/vnd."
-                    "openxmlformats-officedocument."
-                    "presentationml.presentation"
+                storage_key=self._remote_key(
+                    storage_key,
                 ),
+                path=path,
+                content_type=content_type,
             )
 
         return storage_key

@@ -24,9 +24,6 @@ from backend.presentation.content.template_v2_normalizer import (
 from backend.presentation.content.template_v2_prompts import (
     TEMPLATE_V2_SYSTEM_PROMPT,
 )
-from backend.presentation.content.template_v2_text_fitter import (
-    TemplateV2DeterministicTextFitter,
-)
 from backend.presentation.content.template_v2_validator import (
     TemplateV2ContentValidator,
     TemplateV2ValidationError,
@@ -151,8 +148,6 @@ class LLMTemplateV2ContentGenerator:
             )
 
             content = normalizer.normalize(content)
-
-            content = TemplateV2DeterministicTextFitter().fit(content)
 
             try:
                 validator.validate(content)

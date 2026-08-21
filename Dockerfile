@@ -24,6 +24,10 @@ RUN apt-get update \
         libcairo2 \
         libpango-1.0-0 \
         libpangocairo-1.0-0 \
+        ffmpeg \
+        libreoffice-impress \
+        poppler-utils \
+        fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./

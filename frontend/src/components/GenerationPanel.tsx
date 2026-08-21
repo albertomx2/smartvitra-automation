@@ -20,7 +20,13 @@ interface GenerationPanelProps {
 interface GenerationAttachment {
   id: string
   filename: string
-  kind: "pptx" | "pdf" | "video" | "other"
+  kind:
+    | "pptx"
+    | "pdf"
+    | "script"
+    | "audio"
+    | "video"
+    | "other"
   label: string
   downloadUrl: string
 }
@@ -43,8 +49,20 @@ const STEPS = [
     label: "Preparando presentación",
   },
   {
-    key: "saving_output",
-    label: "Guardando presentación",
+    key: "generating_script",
+    label: "Generando guion personalizado",
+  },
+  {
+    key: "generating_narration",
+    label: "Preparando narración de prueba",
+  },
+  {
+    key: "rendering_video",
+    label: "Creando vídeo personalizado",
+  },
+  {
+    key: "saving_outputs",
+    label: "Guardando archivos",
   },
 ]
 
@@ -65,6 +83,71 @@ function buildAttachments(
   job: GenerationJob,
 ): GenerationAttachment[] {
   if (
+    job.artifacts &&
+    job.artifacts.length > 0
+  ) {
+    return job.artifacts
+      .filter(
+        (artifact) =>
+          artifact.download_url,
+      )
+      .map((artifact) => {
+        let kind:
+          GenerationAttachment["kind"] =
+            "other"
+
+        let label =
+          "Archivo generado"
+
+        if (
+          artifact.kind ===
+          "presentation"
+        ) {
+          kind = "pptx"
+          label =
+            "Presentación comercial"
+        }
+
+        if (
+          artifact.kind ===
+          "script"
+        ) {
+          kind = "script"
+          label =
+            "Guion comercial personalizado"
+        }
+
+        if (
+          artifact.kind ===
+          "narration"
+        ) {
+          kind = "audio"
+          label =
+            "Narración personalizada"
+        }
+
+        if (
+          artifact.kind ===
+          "video"
+        ) {
+          kind = "video"
+          label =
+            "Vídeo personalizado"
+        }
+
+        return {
+          id: artifact.id,
+          filename:
+            artifact.filename,
+          kind,
+          label,
+          downloadUrl:
+            artifact.download_url!,
+        }
+      })
+  }
+
+  if (
     !job.output_filename ||
     !job.download_url
   ) {
@@ -74,13 +157,17 @@ function buildAttachments(
   return [
     {
       id: "presentation",
-      filename: job.output_filename,
+      filename:
+        job.output_filename,
       kind: "pptx",
-      label: "Presentación comercial",
-      downloadUrl: job.download_url,
+      label:
+        "Presentación comercial",
+      downloadUrl:
+        job.download_url,
     },
   ]
 }
+
 
 function attachmentBadge(
   kind: GenerationAttachment["kind"],
@@ -90,6 +177,10 @@ function attachmentBadge(
       return "PPT"
     case "pdf":
       return "PDF"
+    case "script":
+      return "JSON"
+    case "audio":
+      return "MP3"
     case "video":
       return "MP4"
     default:
@@ -197,7 +288,7 @@ export default function GenerationPanel({
         >
           {starting
             ? "Iniciando..."
-            : "Generar presentación"}
+            : "Generar"}
         </button>
 
         {error && (
@@ -214,7 +305,7 @@ export default function GenerationPanel({
       <section className="generation-panel generation-failed">
         <div>
           <strong>
-            No se pudo generar la presentación
+            No se pudo generar la propuesta
           </strong>
 
           <p>
@@ -356,7 +447,7 @@ export default function GenerationPanel({
       <section className="generation-panel generation-completed">
         <div>
           <strong>
-            ✓ Presentación generada
+            ✓ Propuesta generada
           </strong>
 
           <p>

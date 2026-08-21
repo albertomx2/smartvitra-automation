@@ -6,7 +6,6 @@ from pathlib import Path
 
 from watchfiles import run_process
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 

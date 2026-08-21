@@ -44,3 +44,4 @@ requests==2.34.2
 google-cloud-run==0.16.1
 firebase-admin==7.5.0
 CairoSVG==2.9.0
+elevenlabs==2.64.0

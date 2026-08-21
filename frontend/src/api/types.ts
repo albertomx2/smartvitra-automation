@@ -113,6 +113,21 @@ export type GenerationJobStatus =
   | "completed"
   | "failed"
 
+export interface GenerationArtifact {
+  id: string
+  kind:
+    | "presentation"
+    | "script"
+    | "narration"
+    | "video"
+    | string
+
+  filename: string
+  content_type: string
+  size_bytes: number
+  download_url: string | null
+}
+
 export interface GenerationJob {
   id: string
   case_id: string
@@ -127,12 +142,15 @@ export interface GenerationJob {
   output_filename: string | null
   download_url: string | null
 
+  artifacts: GenerationArtifact[]
+
   error_message: string | null
 
   created_at: string
   started_at: string | null
   completed_at: string | null
 }
+
 
 export interface ReferencePhoto {
   id: string
