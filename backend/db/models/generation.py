@@ -11,7 +11,6 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -155,12 +154,4 @@ class GenerationArtifact(Base):
 
     job: Mapped[GenerationJob] = relationship(
         back_populates="artifacts",
-    )
-
-    __table_args__ = (
-        UniqueConstraint(
-            "generation_job_id",
-            "kind",
-            name="uq_generation_artifact_job_kind",
-        ),
     )

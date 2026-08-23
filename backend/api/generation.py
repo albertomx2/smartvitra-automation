@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import uuid
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import (
     APIRouter,
     Depends,
+    File,
     HTTPException,
+    UploadFile,
     status,
 )
 from fastapi.responses import FileResponse
@@ -15,9 +18,15 @@ from sqlalchemy.orm import Session
 from backend.cloud.generation_launcher import (
     GenerationLauncher,
 )
+from backend.db.models.generation import (
+    GenerationArtifact,
+)
 from backend.db.session import get_db
 from backend.generation.artifact_repository import (
     GenerationArtifactRepository,
+)
+from backend.generation.repository import (
+    GenerationJobRepository,
 )
 from backend.generation.schemas import (
     GenerationArtifactRead,
@@ -128,6 +137,29 @@ def create_generation_job(
         ) from exc
 
     return _to_read(job, db)
+
+
+@router.get(
+    "/api/cases/{case_id}/generation-jobs/latest",
+    response_model=GenerationJobRead | None,
+)
+def get_latest_generation_job(
+    case_id: uuid.UUID,
+    db: DbSession,
+) -> GenerationJobRead | None:
+    job = GenerationJobRepository(
+        db,
+    ).get_latest_for_case(
+        case_id=case_id,
+    )
+
+    if job is None:
+        return None
+
+    return _to_read(
+        job,
+        db,
+    )
 
 
 @router.get(
@@ -256,4 +288,125 @@ def get_generation_artifact_file(
         path=path,
         media_type=artifact.content_type,
         filename=artifact.filename,
+    )
+
+
+@router.post(
+    "/api/generation-jobs/{job_id}/artifacts",
+    response_model=GenerationArtifactRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def upload_generation_artifact(
+    job_id: uuid.UUID,
+    db: DbSession,
+    file: Annotated[
+        UploadFile,
+        File(),
+    ],
+) -> GenerationArtifactRead:
+    service = GenerationJobService(db)
+
+    try:
+        job = service.get_job(
+            job_id=job_id,
+        )
+    except GenerationJobNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    if job.status != "completed":
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Additional attachments can only " "be added to a completed generation"
+            ),
+        )
+
+    original_filename = Path(file.filename or "attachment").name
+
+    if not original_filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Attachment filename is required",
+        )
+
+    storage = GeneratedFileStorage()
+
+    work_dir = storage.build_job_directory(
+        case_id=job.case_id,
+        job_id=job.id,
+    )
+
+    attachment_dir = work_dir / "manual_attachments"
+
+    attachment_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    internal_filename = f"{uuid.uuid4().hex}_" f"{original_filename}"
+
+    local_path = attachment_dir / internal_filename
+
+    total_bytes = 0
+
+    try:
+        with local_path.open("wb") as output:
+            while True:
+                chunk = file.file.read(
+                    1024 * 1024,
+                )
+
+                if not chunk:
+                    break
+
+                total_bytes += len(chunk)
+
+                if total_bytes > 50 * 1024 * 1024:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=("Attachment exceeds " "the 50 MB limit"),
+                    )
+
+                output.write(chunk)
+
+        if total_bytes == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Attachment is empty",
+            )
+
+        content_type = file.content_type or "application/octet-stream"
+
+        storage_key = storage.persist(
+            path=local_path,
+            content_type=content_type,
+        )
+
+        artifact = GenerationArtifactRepository(
+            db,
+        ).add(
+            GenerationArtifact(
+                generation_job_id=job.id,
+                kind="attachment",
+                filename=original_filename,
+                storage_key=storage_key,
+                content_type=content_type,
+                size_bytes=total_bytes,
+            )
+        )
+
+    finally:
+        file.file.close()
+
+    return GenerationArtifactRead.model_validate(
+        artifact,
+    ).model_copy(
+        update={
+            "download_url": (
+                f"/api/generation-jobs/" f"{job.id}/artifacts/" f"{artifact.id}/file"
+            )
+        }
     )

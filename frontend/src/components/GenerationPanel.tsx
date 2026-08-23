@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from "react"
 import { downloadAuthenticatedFile } from "../api/client"
@@ -7,6 +8,8 @@ import { downloadAuthenticatedFile } from "../api/client"
 import {
   createGenerationJob,
   getGenerationJob,
+  getLatestGenerationJob,
+  uploadGenerationArtifact,
 } from "../api/client"
 
 import type {
@@ -54,7 +57,7 @@ const STEPS = [
   },
   {
     key: "generating_narration",
-    label: "Preparando narración de prueba",
+    label: "Preparando narración",
   },
   {
     key: "rendering_video",
@@ -135,6 +138,20 @@ function buildAttachments(
             "Vídeo personalizado"
         }
 
+        if (
+          artifact.kind ===
+          "attachment"
+        ) {
+          kind =
+            artifact.content_type ===
+            "application/pdf"
+              ? "pdf"
+              : "other"
+
+          label =
+            "Adjunto adicional"
+        }
+
         return {
           id: artifact.id,
           filename:
@@ -197,11 +214,63 @@ export default function GenerationPanel({
   const [starting, setStarting] =
     useState(false)
 
+  const [restoring, setRestoring] =
+    useState(true)
+
+  const [uploading, setUploading] =
+    useState(false)
+
+  const fileInputRef =
+    useRef<HTMLInputElement | null>(
+      null,
+    )
+
   const [reviewing, setReviewing] =
     useState(false)
 
   const [error, setError] =
     useState<string | null>(null)
+
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function restore() {
+      try {
+        setRestoring(true)
+        setError(null)
+
+        const latest =
+          await getLatestGenerationJob(
+            caseId,
+          )
+
+        if (!cancelled) {
+          setJob(latest)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "No se pudo recuperar la última generación",
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setRestoring(false)
+        }
+      }
+    }
+
+    void restore()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    caseId,
+  ])
 
   async function generate() {
     try {
@@ -223,6 +292,53 @@ export default function GenerationPanel({
       )
     } finally {
       setStarting(false)
+    }
+  }
+
+
+  async function uploadAttachments(
+    files: FileList | null,
+  ) {
+    if (
+      !job ||
+      !files ||
+      files.length === 0
+    ) {
+      return
+    }
+
+    try {
+      setUploading(true)
+      setError(null)
+
+      for (
+        const file
+        of Array.from(files)
+      ) {
+        await uploadGenerationArtifact(
+          job.id,
+          file,
+        )
+      }
+
+      const refreshed =
+        await getGenerationJob(
+          job.id,
+        )
+
+      setJob(refreshed)
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudieron añadir los archivos",
+      )
+    } finally {
+      setUploading(false)
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
     }
   }
 
@@ -263,6 +379,23 @@ export default function GenerationPanel({
     job?.id,
     job?.status,
   ])
+
+  if (restoring) {
+    return (
+      <section className="generation-panel">
+        <div>
+          <strong>
+            Recuperando propuesta...
+          </strong>
+
+          <p>
+            Comprobando si este presupuesto
+            ya tiene una generación guardada.
+          </p>
+        </div>
+      </section>
+    )
+  }
 
   if (!job) {
     return (
@@ -421,7 +554,31 @@ export default function GenerationPanel({
             )}
           </div>
 
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            hidden
+            onChange={(event) =>
+              void uploadAttachments(
+                event.target.files,
+              )
+            }
+          />
+
           <div className="generation-review-actions">
+            <button
+              className="secondary-button"
+              disabled={uploading}
+              onClick={() =>
+                fileInputRef.current?.click()
+              }
+            >
+              {uploading
+                ? "Añadiendo..."
+                : "Añadir adjuntos"}
+            </button>
+
             <button
               className="send-button"
               disabled

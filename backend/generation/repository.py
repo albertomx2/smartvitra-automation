@@ -38,6 +38,24 @@ class GenerationJobRepository:
             )
         )
 
+    def get_latest_for_case(
+        self,
+        *,
+        case_id: uuid.UUID,
+    ) -> GenerationJob | None:
+        statement = (
+            select(GenerationJob)
+            .where(
+                GenerationJob.case_id == case_id,
+            )
+            .order_by(
+                GenerationJob.created_at.desc(),
+            )
+            .limit(1)
+        )
+
+        return self._db.scalar(statement)
+
     def get_next_queued(
         self,
     ) -> GenerationJob | None:

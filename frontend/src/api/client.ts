@@ -248,6 +248,61 @@ export async function getGenerationJob(
   )
 }
 
+
+
+export async function getLatestGenerationJob(
+  caseId: string,
+): Promise<GenerationJob | null> {
+  return request<GenerationJob | null>(
+    `/api/cases/${caseId}/generation-jobs/latest`,
+  )
+}
+
+export async function uploadGenerationArtifact(
+  jobId: string,
+  file: File,
+): Promise<void> {
+  const form =
+    new FormData()
+
+  form.append(
+    "file",
+    file,
+  )
+
+  const headers =
+    await authenticatedHeaders()
+
+  const response =
+    await fetch(
+      `/api/generation-jobs/${jobId}/artifacts`,
+      {
+        method: "POST",
+        headers,
+        body: form,
+      },
+    )
+
+  if (!response.ok) {
+    let message =
+      `HTTP ${response.status}`
+
+    try {
+      const data =
+        await response.json()
+
+      if (data.detail) {
+        message =
+          data.detail
+      }
+    } catch {
+      // Ignore malformed JSON.
+    }
+
+    throw new Error(message)
+  }
+}
+
 export async function getReferencePhotos(
   caseId: string,
 ): Promise<ReferenceSelection[]> {
