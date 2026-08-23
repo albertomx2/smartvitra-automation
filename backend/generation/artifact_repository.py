@@ -56,3 +56,10 @@ class GenerationArtifactRepository:
         )
 
         return self._db.scalar(statement)
+
+    def delete(
+        self,
+        artifact: GenerationArtifact,
+    ) -> None:
+        self._db.delete(artifact)
+        self._db.commit()

@@ -303,6 +303,43 @@ export async function uploadGenerationArtifact(
   }
 }
 
+export async function deleteGenerationArtifact(
+  jobId: string,
+  artifactId: string,
+): Promise<void> {
+  const headers =
+    await authenticatedHeaders()
+
+  const response =
+    await fetch(
+      `/api/generation-jobs/${jobId}/artifacts/${artifactId}`,
+      {
+        method: "DELETE",
+        headers,
+      },
+    )
+
+  if (!response.ok) {
+    let message =
+      `HTTP ${response.status}`
+
+    try {
+      const data =
+        await response.json()
+
+      if (data.detail) {
+        message =
+          data.detail
+      }
+    } catch {
+      // Ignore malformed JSON.
+    }
+
+    throw new Error(message)
+  }
+}
+
+
 export async function getReferencePhotos(
   caseId: string,
 ): Promise<ReferenceSelection[]> {

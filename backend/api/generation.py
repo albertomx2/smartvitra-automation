@@ -410,3 +410,62 @@ def upload_generation_artifact(
             )
         }
     )
+
+
+@router.delete(
+    "/api/generation-jobs/{job_id}/artifacts/{artifact_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_generation_artifact(
+    job_id: uuid.UUID,
+    artifact_id: uuid.UUID,
+    db: DbSession,
+) -> None:
+    service = GenerationJobService(db)
+
+    try:
+        job = service.get_job(
+            job_id=job_id,
+        )
+    except GenerationJobNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    if job.status != "completed":
+        raise HTTPException(
+            status_code=409,
+            detail=("Attachments can only be removed " "from a completed generation"),
+        )
+
+    repository = GenerationArtifactRepository(
+        db,
+    )
+
+    artifact = repository.get(
+        artifact_id=artifact_id,
+        generation_job_id=job.id,
+    )
+
+    if artifact is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Attachment not found",
+        )
+
+    if artifact.kind != "attachment":
+        raise HTTPException(
+            status_code=409,
+            detail=("Generated proposal artifacts " "cannot be removed manually"),
+        )
+
+    storage = GeneratedFileStorage()
+
+    storage.delete(
+        storage_key=artifact.storage_key,
+    )
+
+    repository.delete(
+        artifact,
+    )

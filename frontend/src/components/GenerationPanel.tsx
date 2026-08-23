@@ -7,6 +7,7 @@ import { downloadAuthenticatedFile } from "../api/client"
 
 import {
   createGenerationJob,
+  deleteGenerationArtifact,
   getGenerationJob,
   getLatestGenerationJob,
   uploadGenerationArtifact,
@@ -32,6 +33,7 @@ interface GenerationAttachment {
     | "other"
   label: string
   downloadUrl: string
+  deletable: boolean
 }
 
 const STEPS = [
@@ -92,7 +94,15 @@ function buildAttachments(
     return job.artifacts
       .filter(
         (artifact) =>
-          artifact.download_url,
+          artifact.download_url &&
+          (
+            artifact.kind ===
+              "presentation" ||
+            artifact.kind ===
+              "video" ||
+            artifact.kind ===
+              "attachment"
+          ),
       )
       .map((artifact) => {
         let kind:
@@ -100,7 +110,9 @@ function buildAttachments(
             "other"
 
         let label =
-          "Archivo generado"
+          "Documento adicional"
+
+        let deletable = false
 
         if (
           artifact.kind ===
@@ -109,24 +121,6 @@ function buildAttachments(
           kind = "pptx"
           label =
             "Presentación comercial"
-        }
-
-        if (
-          artifact.kind ===
-          "script"
-        ) {
-          kind = "script"
-          label =
-            "Guion comercial personalizado"
-        }
-
-        if (
-          artifact.kind ===
-          "narration"
-        ) {
-          kind = "audio"
-          label =
-            "Narración personalizada"
         }
 
         if (
@@ -149,7 +143,9 @@ function buildAttachments(
               : "other"
 
           label =
-            "Adjunto adicional"
+            "Documento adicional"
+
+          deletable = true
         }
 
         return {
@@ -160,6 +156,7 @@ function buildAttachments(
           label,
           downloadUrl:
             artifact.download_url!,
+          deletable,
         }
       })
   }
@@ -181,10 +178,10 @@ function buildAttachments(
         "Presentación comercial",
       downloadUrl:
         job.download_url,
+      deletable: false,
     },
   ]
 }
-
 
 function attachmentBadge(
   kind: GenerationAttachment["kind"],
@@ -219,6 +216,9 @@ export default function GenerationPanel({
 
   const [uploading, setUploading] =
     useState(false)
+
+  const [deletingArtifactId, setDeletingArtifactId] =
+    useState<string | null>(null)
 
   const fileInputRef =
     useRef<HTMLInputElement | null>(
@@ -341,6 +341,43 @@ export default function GenerationPanel({
       }
     }
   }
+
+  async function removeAttachment(
+    artifactId: string,
+  ) {
+    if (!job) {
+      return
+    }
+
+    try {
+      setDeletingArtifactId(
+        artifactId,
+      )
+
+      setError(null)
+
+      await deleteGenerationArtifact(
+        job.id,
+        artifactId,
+      )
+
+      const current =
+        await getGenerationJob(
+          job.id,
+        )
+
+      setJob(current)
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo eliminar el adjunto",
+      )
+    } finally {
+      setDeletingArtifactId(null)
+    }
+  }
+
 
   useEffect(() => {
     if (
@@ -485,8 +522,11 @@ export default function GenerationPanel({
               </strong>
 
               <p>
-                Revisa los archivos generados
-                antes de continuar.
+                Revisa los archivos que se enviarán
+                al cliente. Puedes descargar los
+                documentos generados o añadir
+                documentación adicional antes
+                del envío.
               </p>
             </div>
 
@@ -502,7 +542,7 @@ export default function GenerationPanel({
 
           <div className="generation-attachments">
             <div className="generation-attachments-title">
-              Archivos adjuntos
+              Archivos que se enviarán
             </div>
 
             {attachments.length === 0 ? (
@@ -534,20 +574,42 @@ export default function GenerationPanel({
                       </div>
                     </div>
 
-                    <a
-                      className="attachment-download-button"
-                      href="#"
-                      onClick={async (event) => {
-                        event.preventDefault()
+                    <div className="generation-attachment-actions">
+                      <a
+                        className="attachment-download-button"
+                        href="#"
+                        onClick={async (event) => {
+                          event.preventDefault()
 
-                        await downloadAuthenticatedFile(
-                          attachment.downloadUrl,
-                          attachment.filename,
-                        )
-                      }}
-                    >
-                      Descargar
-                    </a>
+                          await downloadAuthenticatedFile(
+                            attachment.downloadUrl,
+                            attachment.filename,
+                          )
+                        }}
+                      >
+                        Descargar
+                      </a>
+
+                      {attachment.deletable && (
+                        <button
+                          className="attachment-delete-button"
+                          disabled={
+                            deletingArtifactId ===
+                            attachment.id
+                          }
+                          onClick={() =>
+                            void removeAttachment(
+                              attachment.id,
+                            )
+                          }
+                        >
+                          {deletingArtifactId ===
+                          attachment.id
+                            ? "Eliminando..."
+                            : "Eliminar"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ),
               )
@@ -576,7 +638,7 @@ export default function GenerationPanel({
             >
               {uploading
                 ? "Añadiendo..."
-                : "Añadir adjuntos"}
+                : "Añadir archivos"}
             </button>
 
             <button

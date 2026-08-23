@@ -81,6 +81,25 @@ class GeneratedFileStorage:
 
         return storage_key
 
+    def delete(
+        self,
+        *,
+        storage_key: str,
+    ) -> None:
+        path = self._root / storage_key
+
+        if self._backend == "r2":
+            assert self._r2 is not None
+
+            self._r2.delete(
+                storage_key=self._remote_key(
+                    storage_key,
+                ),
+            )
+
+        if path.exists():
+            path.unlink()
+
     def get_path(
         self,
         *,
