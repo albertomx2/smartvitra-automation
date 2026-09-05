@@ -46,6 +46,6 @@ class VariableNarrationScript(BaseModel):
     """Only the customer-specific slides requested from Gemini."""
 
     slides: list[NarrationSlide] = Field(
-        min_length=4,
-        max_length=4,
+        min_length=3,
+        max_length=3,
     )

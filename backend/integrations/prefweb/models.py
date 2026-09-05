@@ -45,6 +45,7 @@ class PrefWebSalesItem(BaseModel):
     dimensions: str | None = None
 
     quantity: int | None = None
+    unit_price: float | None = None
     discount: float | None = None
     total_amount: float | None = None
 
@@ -138,6 +139,8 @@ class PrefWebProjectWindow(BaseModel):
     dimensions: str | None = None
 
     quantity: int
+    unit_price: float | None = None
+    discount: float | None = None
     total_amount: float
 
     room: str | None = None

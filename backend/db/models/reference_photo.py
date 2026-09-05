@@ -92,6 +92,19 @@ class ReferencePhoto(Base):
         default=list,
     )
 
+    element_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    opening_system: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    leaf_configuration: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    content_sha256: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        unique=True,
+    )
+    source_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    width_px: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    height_px: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    quality_score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
     active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,

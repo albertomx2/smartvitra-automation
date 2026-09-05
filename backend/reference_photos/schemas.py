@@ -21,6 +21,13 @@ class ReferencePhotoRead(BaseModel):
 
     feature_tags: list[str]
 
+    element_type: str | None = None
+    opening_system: str | None = None
+    leaf_configuration: str | None = None
+    width_px: int | None = None
+    height_px: int | None = None
+    quality_score: int = 0
+
     file_url: str
 
 

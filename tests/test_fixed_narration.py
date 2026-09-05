@@ -43,7 +43,6 @@ def test_generator_requests_only_variable_slides_and_inserts_fixed_copy() -> Non
                         (1, "personalized_opening"),
                         (2, "problem_awareness"),
                         (3, "solution_transformation"),
-                        (7, "investment"),
                     ]
                 ]
             )
@@ -55,11 +54,18 @@ def test_generator_requests_only_variable_slides_and_inserts_fixed_copy() -> Non
             "pricing": {
                 "discount_applied": True,
                 "discount_condition_days": 15,
+                "discount_percentage": 15,
                 "total": 4478.19,
             }
         },
         presentation_content=SimpleNamespace(
             model_dump=lambda **kwargs: {},
+            slide07=SimpleNamespace(
+                payment_terms=[
+                    "50% al confirmar el pedido",
+                    "50% al finalizar",
+                ]
+            ),
         ),
     )
 
@@ -71,4 +77,7 @@ def test_generator_requests_only_variable_slides_and_inserts_fixed_copy() -> Non
 
     assert '"discount_applied": true' in llm.user_prompt
     assert "próximos 15 días" in script.slides[6].narration
-    assert "4.478,19 €" in script.slides[6].narration
+    assert "15 por ciento" in script.slides[6].narration
+    assert "4.478,19 euros" in script.slides[6].narration
+    assert "modelo" not in script.slides[6].narration.lower()
+    assert "elección de ventanas" in script.slides[6].narration

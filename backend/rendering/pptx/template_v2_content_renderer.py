@@ -40,6 +40,8 @@ class TemplateV2ContentRenderer:
         content: TemplateV2PresentationContent,
         renderer: PowerPointRenderer,
     ) -> None:
+        TemplateV2LayoutRenderer().render_slide01_identity(renderer=renderer)
+
         values = {
             "sv_s01_intro_text": (content.slide01.intro_text),
             "sv_s01_customer_name": (content.slide01.customer_name),

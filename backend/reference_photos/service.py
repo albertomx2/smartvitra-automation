@@ -51,6 +51,10 @@ class ReferencePhotoService:
                 room_tags=(photo.room_tags),
                 window_type_tags=(photo.window_type_tags),
                 feature_tags=(photo.feature_tags),
+                element_type=photo.element_type,
+                opening_system=photo.opening_system,
+                leaf_configuration=photo.leaf_configuration,
+                quality_score=photo.quality_score,
             )
             for photo in photos
         ]
@@ -71,7 +75,13 @@ class ReferencePhotoService:
         # First pass:
         # try to represent different actual
         # windows/problems in the project.
-        for window in snapshot.windows:
+        targets = [
+            window
+            for window in snapshot.windows
+            for _ in range(max(1, min(window.quantity, limit)))
+        ]
+
+        for window in targets:
             ranked = matcher.rank_for_window(
                 window=window,
                 photos=candidates,
@@ -111,7 +121,7 @@ class ReferencePhotoService:
         # the strongest unused candidates.
         all_scores: dict[str, int] = {}
 
-        for window in snapshot.windows:
+        for window in targets:
             ranked = matcher.rank_for_window(
                 window=window,
                 photos=candidates,

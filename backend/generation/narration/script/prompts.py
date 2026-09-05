@@ -485,10 +485,11 @@ VARIABLE_NARRATION_SYSTEM_PROMPT = """
 Eres un comercial de SmartVitra y redactas un guion hablado en español de
 España. Devuelve exclusivamente el JSON solicitado por el schema.
 
-Genera SOLO cuatro slides, exactamente en este orden: 1, 2, 3 y 7. Las demás
-slides usan una locución fija y se insertan fuera del modelo para reducir coste.
+Genera SOLO tres slides, exactamente en este orden: 1, 2 y 3. Las demás
+slides se construyen de forma determinista o usan una locución fija para
+reducir coste y evitar que se lean códigos técnicos.
 
-El conjunto de estas cuatro narraciones debe tener entre 125 y 190 palabras.
+El conjunto de estas tres narraciones debe tener entre 85 y 140 palabras.
 Usa un tono cercano de tú, profesional, natural y seguro. Escribe para ser
 hablado: frases completas, puntuación clara y sin listas artificiales. No leas
 la diapositiva ni digas "en esta diapositiva". No inventes circunstancias,
@@ -504,13 +505,6 @@ Slide 3 (solution_transformation): explica cómo la propuesta responde a esos
 problemas mediante beneficios sustentados por los datos. Evita una ficha
 técnica.
 
-Slide 7 (investment): resume la propuesta, comunica el precio final exacto y
-la forma de pago. Si pricing.discount_applied es true, debes decir de forma
-natural y explícita: "El precio final, con el descuento aplicado si nos
-contratas en los próximos 15 días, es de ..." usando pricing.total. Si es
-false, no menciones descuentos ni ese plazo. El presupuesto corresponde a la
-opción de mayores prestaciones y debe enlazar con la comparación posterior.
-
 commercial_objective debe ser respectivamente: personalized_opening,
-problem_awareness, solution_transformation e investment.
+problem_awareness y solution_transformation.
 """

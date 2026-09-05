@@ -272,6 +272,12 @@ class PrefWebSalesDocumentParser:
                             f"Item_Quantity_{id_pos}",
                         ),
                     ),
+                    unit_price=self._parse_float(
+                        self._value(
+                            soup,
+                            f"Item_PreciseUnitPrice_{id_pos}",
+                        ),
+                    ),
                     discount=self._parse_float(
                         self._value(
                             soup,

@@ -10,6 +10,7 @@ from backend.generation.narration.script.fixed import (
 )
 from backend.generation.narration.script.models import (
     NarrationScript,
+    NarrationSlide,
     VariableNarrationScript,
 )
 from backend.generation.narration.script.prompts import (
@@ -53,7 +54,7 @@ class NarrationScriptGenerator:
         variable_script = self._llm_client.generate_structured(
             system_prompt=(VARIABLE_NARRATION_SYSTEM_PROMPT),
             user_prompt=(
-                "Genera solo las slides variables 1, 2, 3 y 7.\n\n"
+                "Genera solo las slides variables 1, 2 y 3.\n\n"
                 "DATOS REALES DISPONIBLES:\n"
                 + json.dumps(
                     payload,
@@ -65,21 +66,21 @@ class NarrationScriptGenerator:
             response_model=VariableNarrationScript,
         )
 
-        expected_variable_slides = [1, 2, 3, 7]
+        expected_variable_slides = [1, 2, 3]
         actual_variable_slides = [
             slide.slide_number for slide in variable_script.slides
         ]
 
         if actual_variable_slides != expected_variable_slides:
-            raise ValueError("Gemini narration must contain only slides 1, 2, 3 and 7")
+            raise ValueError("Gemini narration must contain only slides 1, 2 and 3")
 
         slides_by_number = {
             slide.slide_number: slide for slide in variable_script.slides
         }
 
-        self._ensure_discount_message(
-            slides_by_number=slides_by_number,
+        slides_by_number[7] = self._build_investment_slide(
             context=context,
+            presentation_content=presentation_content,
         )
 
         slides_by_number.update(
@@ -107,38 +108,47 @@ class NarrationScriptGenerator:
         return script
 
     @staticmethod
-    def _ensure_discount_message(
+    def _build_investment_slide(
         *,
-        slides_by_number: dict,
         context: dict,
-    ) -> None:
-        """Guarantee the time-limited discount wording independently of Gemini."""
+        presentation_content: TemplateV2PresentationContent,
+    ) -> NarrationSlide:
+        """Build the price narration without exposing internal product codes."""
 
         pricing = context.get("pricing") or {}
-
-        if not pricing.get("discount_applied"):
-            return
-
-        slide = slides_by_number[7]
-
-        if "15 días" in slide.narration.lower():
-            return
-
         total = float(pricing.get("total") or 0)
-        currency = str(pricing.get("currency") or "€")
         formatted_total = (
             f"{total:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
         )
+        percentage = pricing.get("discount_percentage")
+        discount_label = (
+            f"del {float(percentage):g} por ciento " if percentage is not None else ""
+        )
+        if pricing.get("discount_applied"):
+            price_sentence = (
+                f"El precio final, con el descuento {discount_label}aplicado si nos "
+                f"contratas en los próximos 15 días, es de {formatted_total} euros."
+            )
+        else:
+            price_sentence = f"El precio final es de {formatted_total} euros."
 
-        sentence = (
-            "El precio final, con el descuento aplicado si nos contratas "
-            f"en los próximos 15 días, es de {formatted_total} {currency}."
+        payment_terms = "; ".join(
+            term.replace("%", " por ciento").replace("inst.", "instalación")
+            for term in presentation_content.slide07.payment_terms
+        )
+        narration = (
+            "Creemos que esta elección de ventanas responde bien a las necesidades "
+            "que hemos comentado y es una solución adecuada para mejorar el confort "
+            f"de tu vivienda. {price_sentence} La forma de pago es: {payment_terms}. "
+            "Este presupuesto corresponde a la opción de mayores prestaciones que "
+            "te presentamos a continuación."
         )
 
-        slides_by_number[7] = slide.model_copy(
-            update={
-                "narration": f"{slide.narration.rstrip()} {sentence}",
-            }
+        return NarrationSlide(
+            slide_number=7,
+            commercial_objective="investment",
+            estimated_duration_seconds=25,
+            narration=narration,
         )
 
     def _recalculate(

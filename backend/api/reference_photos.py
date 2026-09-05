@@ -55,6 +55,12 @@ def _photo_read(
         room_tags=photo.room_tags,
         window_type_tags=(photo.window_type_tags),
         feature_tags=photo.feature_tags,
+        element_type=photo.element_type,
+        opening_system=photo.opening_system,
+        leaf_configuration=photo.leaf_configuration,
+        width_px=photo.width_px,
+        height_px=photo.height_px,
+        quality_score=photo.quality_score,
         file_url=(f"/api/reference-photos/" f"{photo.id}/file"),
     )
 

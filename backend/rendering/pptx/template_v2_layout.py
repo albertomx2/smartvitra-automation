@@ -1,3 +1,5 @@
+from pptx.util import Inches
+
 from backend.rendering.pptx.renderer import (
     PowerPointRenderer,
 )
@@ -6,6 +8,25 @@ SLIDE03_SOLUTION_COUNT = 6
 
 
 class TemplateV2LayoutRenderer:
+    def render_slide01_identity(
+        self,
+        *,
+        renderer: PowerPointRenderer,
+    ) -> None:
+        """Give variable customer data enough room without moving row labels."""
+
+        sizes = {
+            "sv_s01_customer_name": (5.3, 0.46, True),
+            "sv_s01_address": (5.3, 0.46, True),
+            "sv_s01_proposal_number": (2.0, 0.3, False),
+            "sv_s01_date": (2.0, 0.3, False),
+        }
+        for shape_name, (width, height, word_wrap) in sizes.items():
+            shape = renderer.find_shape(shape_name)
+            shape.width = Inches(width)
+            shape.height = Inches(height)
+            renderer.lock_text_box_geometry(shape_name, word_wrap=word_wrap)
+
     def render_slide03_solutions(
         self,
         *,

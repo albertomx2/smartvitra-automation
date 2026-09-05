@@ -44,6 +44,7 @@ from backend.generation.video import (
 from backend.integrations.llm.gemini import (
     GeminiStructuredClient,
 )
+from backend.reference_photos.service import ReferencePhotoService
 from backend.storage.generated import (
     GeneratedFileStorage,
 )
@@ -130,6 +131,10 @@ class GenerationJobRunner:
                 job,
                 step="snapshotting",
                 progress=10,
+            )
+
+            ReferencePhotoService(self._db).ensure_selections(
+                case_id=job.case_id,
             )
 
             snapshot = GenerationSnapshotBuilder(self._db).build(

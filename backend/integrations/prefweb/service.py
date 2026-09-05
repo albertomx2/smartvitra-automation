@@ -142,8 +142,14 @@ class PrefWebService:
             document=document,
         )
 
-        discount_amount = float(document.commercial_discount_amount or 0)
-        discount_percentage = document.commercial_discount_percentage
+        (
+            discount_amount,
+            discount_percentage,
+            subtotal_before_discount,
+        ) = self._effective_discount(
+            document=document,
+            subtotal=summary.subtotal,
+        )
 
         return PrefWebProject(
             number=document.number,
@@ -176,17 +182,15 @@ class PrefWebService:
                     color=item.color,
                     dimensions=(item.dimensions),
                     quantity=(item.quantity or 1),
+                    unit_price=item.unit_price,
+                    discount=item.discount,
                     total_amount=(item.total_amount or 0.0),
                     room=(item.internal_remarks),
                 )
                 for item in document.items
                 if item.item_type == "Design"
             ],
-            subtotal_before_discount=(
-                document.subtotal_before_discount
-                if document.subtotal_before_discount is not None
-                else summary.subtotal + discount_amount
-            ),
+            subtotal_before_discount=subtotal_before_discount,
             discount_percentage=discount_percentage,
             discount_amount=discount_amount,
             has_discount=(discount_amount > 0 or float(discount_percentage or 0) > 0),
@@ -197,13 +201,15 @@ class PrefWebService:
         *,
         document,
     ) -> PrefWebProject:
-        subtotal_before_discount = (
-            document.subtotal_before_discount
-            if document.subtotal_before_discount is not None
-            else sum(item.total_amount or 0 for item in document.items)
+        item_subtotal = sum(item.total_amount or 0 for item in document.items)
+        (
+            discount_amount,
+            discount_percentage,
+            subtotal_before_discount,
+        ) = self._effective_discount(
+            document=document,
+            subtotal=item_subtotal,
         )
-
-        discount_amount = float(document.commercial_discount_amount or 0)
 
         subtotal = max(
             0.0,
@@ -248,6 +254,8 @@ class PrefWebService:
                     color=item.color,
                     dimensions=(item.dimensions),
                     quantity=(item.quantity or 1),
+                    unit_price=item.unit_price,
+                    discount=item.discount,
                     total_amount=(item.total_amount or 0.0),
                     room=(item.internal_remarks),
                 )
@@ -255,10 +263,54 @@ class PrefWebService:
                 if item.item_type == "Design"
             ],
             subtotal_before_discount=subtotal_before_discount,
-            discount_percentage=(document.commercial_discount_percentage),
+            discount_percentage=discount_percentage,
             discount_amount=discount_amount,
-            has_discount=(
-                discount_amount > 0
-                or float(document.commercial_discount_percentage or 0) > 0
-            ),
+            has_discount=(discount_amount > 0 or float(discount_percentage or 0) > 0),
         )
+
+    @staticmethod
+    def _effective_discount(
+        *,
+        document,
+        subtotal: float,
+    ) -> tuple[float, float | None, float]:
+        """Combine real window-line and document commercial discounts.
+
+        Free ancillary rows (for example installation at 100%) are deliberately
+        excluded: the customer-facing promotion is the discount applied to the
+        designed windows.
+        """
+
+        design_items = [item for item in document.items if item.item_type == "Design"]
+        line_gross = sum(
+            float(item.unit_price or 0) * float(item.quantity or 1)
+            for item in design_items
+            if float(item.discount or 0) > 0
+        )
+        line_net = sum(
+            float(item.total_amount or 0)
+            for item in design_items
+            if float(item.discount or 0) > 0
+        )
+        line_discount_amount = max(0.0, line_gross - line_net)
+
+        commercial_amount = abs(float(document.commercial_discount_amount or 0))
+        total_discount_amount = line_discount_amount + commercial_amount
+
+        base = subtotal + total_discount_amount
+        percentage = (
+            round((total_discount_amount / base) * 100, 2)
+            if total_discount_amount > 0 and base > 0
+            else None
+        )
+
+        if line_discount_amount == 0 and document.commercial_discount_percentage:
+            percentage = float(document.commercial_discount_percentage)
+
+        subtotal_before_discount = (
+            float(document.subtotal_before_discount) + line_discount_amount
+            if document.subtotal_before_discount is not None
+            else base
+        )
+
+        return total_discount_amount, percentage, subtotal_before_discount
