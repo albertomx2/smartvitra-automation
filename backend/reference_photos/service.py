@@ -8,6 +8,9 @@ from backend.db.models.reference_photo import (
     CaseReferenceSelection,
     ReferencePhoto,
 )
+from backend.generation.snapshot import (
+    GenerationWindowSnapshot,
+)
 from backend.generation.snapshot_builder import (
     GenerationSnapshotBuilder,
 )
@@ -75,11 +78,11 @@ class ReferencePhotoService:
         # First pass:
         # try to represent different actual
         # windows/problems in the project.
-        targets = [
-            window
-            for window in snapshot.windows
-            for _ in range(max(1, min(window.quantity, limit)))
-        ]
+        targets = self._representative_targets(
+            windows=snapshot.windows,
+            matcher=matcher,
+            limit=limit,
+        )
 
         for window in targets:
             ranked = matcher.rank_for_window(
@@ -171,6 +174,44 @@ class ReferencePhotoService:
                 break
 
         return result
+
+    @staticmethod
+    def _representative_targets(
+        *,
+        windows: list[GenerationWindowSnapshot],
+        matcher: ReferencePhotoMatcher,
+        limit: int,
+    ) -> list[GenerationWindowSnapshot]:
+        """Represent different real window configurations before quantities."""
+
+        matchable = [
+            window for window in windows if matcher.is_matchable_window(window)
+        ]
+        if not matchable:
+            return []
+
+        unique = []
+        signatures = set()
+        for window in matchable:
+            profile = matcher.profile_for_window(window)
+            signature = (
+                profile.element_type,
+                profile.opening_system,
+                profile.leaf_configuration,
+            )
+            if signature in signatures:
+                continue
+            signatures.add(signature)
+            unique.append(window)
+            if len(unique) == limit:
+                return unique
+
+        targets = list(unique)
+        index = 0
+        while len(targets) < limit:
+            targets.append(unique[index % len(unique)])
+            index += 1
+        return targets
 
     def ensure_selections(
         self,

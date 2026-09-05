@@ -29,14 +29,30 @@ class ScoredReferencePhoto:
     score: int
 
 
+@dataclass(frozen=True)
+class WindowMatchProfile:
+    element_type: str
+    opening_system: str | None
+    leaf_configuration: str | None
+    leaf_count: int | None
+    has_fixed: bool
+
+
 class ReferencePhotoMatcher:
-    ELEMENT_WEIGHT = 50
-    SYSTEM_WEIGHT = 40
-    LEAF_WEIGHT = 30
+    ELEMENT_WEIGHT = 40
+    SYSTEM_WEIGHT = 35
+    EXACT_LEAF_WEIGHT = 35
+    SAME_LEAF_COUNT_WEIGHT = 22
+    ADJACENT_LEAF_COUNT_WEIGHT = 10
+    SAME_FIXED_WEIGHT = 5
+    SYSTEM_MISMATCH_PENALTY = 25
+    FIXED_ONLY_MISMATCH_PENALTY = 60
+    ELEMENT_MISMATCH_PENALTY = 50
     PROBLEM_WEIGHT = 10
     WINDOW_TYPE_WEIGHT = 5
     ROOM_WEIGHT = 4
     FEATURE_WEIGHT = 1
+    QUALITY_MAX = 5
 
     def rank_for_window(
         self,
@@ -51,32 +67,15 @@ class ReferencePhotoMatcher:
         window_tokens = self._tokens(window.description or "")
 
         feature_tokens = self._tokens(window.color or "")
-        target_text = " ".join(
-            value
-            for value in (
-                window.nomenclature,
-                window.reference,
-                window.description,
-            )
-            if value
-        )
-        target_element = self._infer_element_type(target_text)
-        target_system = self._infer_opening_system(target_text)
-        target_leaf = self._infer_leaf_configuration(target_text)
+        target = self.profile_for_window(window)
 
         scored: list[ScoredReferencePhoto] = []
 
         for photo in photos:
             score = 0
 
-            if photo.element_type and photo.element_type == target_element:
-                score += self.ELEMENT_WEIGHT
-
-            if target_system and photo.opening_system == target_system:
-                score += self.SYSTEM_WEIGHT
-
-            if target_leaf and photo.leaf_configuration == target_leaf:
-                score += self.LEAF_WEIGHT
+            candidate = self._candidate_profile(photo)
+            score += self._structured_score(target=target, candidate=candidate)
 
             problems = {self._normalize(value) for value in photo.problem_tags}
 
@@ -103,7 +102,7 @@ class ReferencePhotoMatcher:
             score += len(window_tokens & photo_window_tokens) * self.WINDOW_TYPE_WEIGHT
 
             score += len(feature_tokens & photo_feature_tokens) * self.FEATURE_WEIGHT
-            score += max(0, min(photo.quality_score, 10))
+            score += max(0, min(photo.quality_score, self.QUALITY_MAX))
 
             scored.append(
                 ScoredReferencePhoto(
@@ -121,9 +120,105 @@ class ReferencePhotoMatcher:
             reverse=True,
         )
 
+    def profile_for_window(
+        self,
+        window: GenerationWindowSnapshot,
+    ) -> WindowMatchProfile:
+        target_text = " ".join(
+            value
+            for value in (
+                window.nomenclature,
+                window.reference,
+                window.description,
+            )
+            if value
+        )
+        leaf_configuration = self._infer_leaf_configuration(target_text)
+        return WindowMatchProfile(
+            element_type=self._infer_element_type(target_text),
+            opening_system=self._infer_opening_system(target_text),
+            leaf_configuration=leaf_configuration,
+            leaf_count=self._leaf_count(leaf_configuration),
+            has_fixed=self._has_fixed(leaf_configuration, target_text),
+        )
+
+    def is_matchable_window(
+        self,
+        window: GenerationWindowSnapshot,
+    ) -> bool:
+        return self.profile_for_window(window).element_type != "accessory"
+
+    @classmethod
+    def _candidate_profile(
+        cls,
+        photo: ReferencePhotoCandidate,
+    ) -> WindowMatchProfile:
+        return WindowMatchProfile(
+            element_type=photo.element_type or "window",
+            opening_system=photo.opening_system,
+            leaf_configuration=photo.leaf_configuration,
+            leaf_count=cls._leaf_count(photo.leaf_configuration),
+            has_fixed=cls._has_fixed(photo.leaf_configuration, ""),
+        )
+
+    @classmethod
+    def _structured_score(
+        cls,
+        *,
+        target: WindowMatchProfile,
+        candidate: WindowMatchProfile,
+    ) -> int:
+        score = (
+            cls.ELEMENT_WEIGHT
+            if target.element_type == candidate.element_type
+            else -cls.ELEMENT_MISMATCH_PENALTY
+        )
+
+        if target.opening_system and candidate.opening_system:
+            if target.opening_system == candidate.opening_system:
+                score += cls.SYSTEM_WEIGHT
+            else:
+                score -= cls.SYSTEM_MISMATCH_PENALTY
+
+        if (
+            target.opening_system != "fixed"
+            and candidate.opening_system == "fixed"
+            and (target.leaf_count or 0) > 0
+        ):
+            score -= cls.FIXED_ONLY_MISMATCH_PENALTY
+
+        if (
+            target.leaf_configuration
+            and target.leaf_configuration == candidate.leaf_configuration
+        ):
+            score += cls.EXACT_LEAF_WEIGHT
+        elif target.leaf_count is not None and candidate.leaf_count is not None:
+            difference = abs(target.leaf_count - candidate.leaf_count)
+            if difference == 0:
+                score += cls.SAME_LEAF_COUNT_WEIGHT
+            elif difference == 1:
+                score += cls.ADJACENT_LEAF_COUNT_WEIGHT
+
+        if target.has_fixed == candidate.has_fixed:
+            score += cls.SAME_FIXED_WEIGHT
+
+        return score
+
     @classmethod
     def _infer_element_type(cls, value: str) -> str:
         normalized = cls._normalize(value)
+        if any(
+            marker in normalized
+            for marker in (
+                "chapa alu",
+                "chapa de aluminio",
+                "forro",
+                "embocadura",
+                "peana",
+                "pliegue",
+            )
+        ):
+            return "accessory"
         if "balconera" in normalized or "puerta" in normalized:
             return "balcony_door"
         if "cerramiento" in normalized or "mirador" in normalized:
@@ -141,10 +236,12 @@ class ReferencePhotoMatcher:
             return "sliding"
         if "oscilobat" in normalized or "abatible" in normalized:
             return "tilt_turn"
-        if re.search(r"\bfij[oa]\b", normalized):
+        if re.search(r"\bfij[oa]\b", normalized) and "hoja" not in normalized:
             return "fixed"
         if "openmax" in normalized:
             return "openmax"
+        if "ventana" in normalized and "hoja" in normalized:
+            return "tilt_turn"
         return None
 
     @classmethod
@@ -166,6 +263,28 @@ class ReferencePhotoMatcher:
         if fixed and "hoja" in normalized:
             return "leaf_plus_fixed"
         return None
+
+    @staticmethod
+    def _leaf_count(configuration: str | None) -> int | None:
+        return {
+            "one_leaf": 1,
+            "leaf_plus_fixed": 1,
+            "two_leaves": 2,
+            "two_leaves_plus_fixed": 2,
+            "three_leaves": 3,
+            "four_leaves": 4,
+        }.get(configuration or "")
+
+    @classmethod
+    def _has_fixed(
+        cls,
+        configuration: str | None,
+        raw_text: str,
+    ) -> bool:
+        return configuration in {
+            "leaf_plus_fixed",
+            "two_leaves_plus_fixed",
+        } or "fijo" in cls._normalize(raw_text)
 
     @classmethod
     def _room_tokens(

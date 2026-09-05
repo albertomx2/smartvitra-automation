@@ -71,9 +71,11 @@ flowchart TD
 La biblioteca corporativa de trabajos terminados se almacena en R2 y se
 clasifica en PostgreSQL por tipo de elemento, sistema de apertura, composición
 de hojas, dimensiones y calidad visual. Antes de generar, el matcher representa
-hasta tres ventanas reales del presupuesto —incluida su cantidad— y prioriza en
-este orden: tipo, sistema, número de hojas y calidad/formato. Las tres selecciones
-quedan guardadas por caso y pueden revisarse o sustituirse desde la web.
+hasta tres configuraciones distintas de ventanas reales del presupuesto. Excluye
+chapas y remates auxiliares, puntúa coincidencias parciales por tipo, sistema,
+número de hojas y presencia de fijos, y usa la calidad/formato como desempate.
+Las tres selecciones quedan guardadas por caso y pueden revisarse o sustituirse
+desde la web.
 
 ## Despliegue
 
