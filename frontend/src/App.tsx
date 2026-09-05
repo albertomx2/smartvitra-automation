@@ -80,14 +80,13 @@ function SaveIndicator({
     <span
       className={`save-status save-status-${status}`}
     >
-      {status === "saving" &&
-        "Guardando…"}
-
-      {status === "saved" &&
-        "Guardado ✓"}
-
-      {status === "error" &&
-        "Error al guardar"}
+      <span translate="no">
+        {status === "saving"
+          ? "Guardando…"
+          : status === "saved"
+            ? "Guardado ✓"
+            : "Error al guardar"}
+      </span>
     </span>
   )
 }
