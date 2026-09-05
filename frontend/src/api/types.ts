@@ -87,6 +87,10 @@ export interface WorkspaceProject {
   tax: number
   final_price: number
   currency_symbol: string
+  subtotal_before_discount?: number | null
+  discount_percentage?: number | null
+  discount_amount?: number
+  has_discount?: boolean
 }
 
 export interface CaseWorkspace {
@@ -128,6 +132,36 @@ export interface GenerationArtifact {
   download_url: string | null
 }
 
+export interface GenerationDelivery {
+  id: string
+  generation_job_id: string
+
+  status:
+    | "pending"
+    | "sending"
+    | "sent"
+    | "failed"
+    | string
+
+  recipient_name: string
+  recipient_email: string
+
+  odoo_partner_id: number | null
+  odoo_mail_id: number | null
+
+  partner_created: boolean
+  attachment_count: number
+
+  sent_artifacts:
+    | Array<Record<string, unknown>>
+    | null
+
+  error_message: string | null
+
+  created_at: string
+  sent_at: string | null
+}
+
 export interface GenerationJob {
   id: string
   case_id: string
@@ -143,6 +177,8 @@ export interface GenerationJob {
   download_url: string | null
 
   artifacts: GenerationArtifact[]
+
+  latest_delivery: GenerationDelivery | null
 
   error_message: string | null
 

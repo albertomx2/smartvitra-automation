@@ -61,6 +61,8 @@ class ProjectCaseRead(BaseModel):
 
     alias_number: str
     customer_name: str
+    customer_email: str | None
+    customer_phone: str | None
     status: str
     visit_notes: str | None
 
@@ -112,6 +114,8 @@ class CaseWorkspaceProject(BaseModel):
     version_name: str
 
     customer_name: str
+    customer_email: str | None
+    customer_phone: str | None
 
     request_date: str | None
     reference: str | None
@@ -126,6 +130,11 @@ class CaseWorkspaceProject(BaseModel):
     tax: float
     final_price: float
     currency_symbol: str
+
+    subtotal_before_discount: float | None = None
+    discount_percentage: float | None = None
+    discount_amount: float = 0.0
+    has_discount: bool = False
 
 
 class CaseWorkspaceRead(BaseModel):

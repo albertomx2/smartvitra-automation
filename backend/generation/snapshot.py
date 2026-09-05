@@ -64,6 +64,8 @@ class GenerationProjectSnapshot(BaseModel):
     version_name: str
 
     customer_name: str
+    customer_email: str | None = None
+    customer_phone: str | None = None
 
     request_date: str | None = None
     reference: str | None = None
@@ -81,6 +83,11 @@ class GenerationProjectSnapshot(BaseModel):
     final_price: float
 
     currency_symbol: str
+
+    subtotal_before_discount: float | None = None
+    discount_percentage: float | None = None
+    discount_amount: float = 0.0
+    has_discount: bool = False
 
 
 class CaseGenerationSnapshot(BaseModel):

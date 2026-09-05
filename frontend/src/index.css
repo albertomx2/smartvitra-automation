@@ -2,3 +2,27 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
+
+.generation-attachment-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.attachment-delete-button {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  color: #b42318;
+  padding: 0;
+}
+
+.attachment-delete-button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.attachment-delete-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

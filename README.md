@@ -6,23 +6,10 @@ Plataforma de automatización del proceso comercial de SmartVitra.
 
 Automatizar el flujo desde la configuración técnica del presupuesto hasta la generación y entrega de la propuesta comercial.
 
-## Arquitectura prevista
+## Documentación
 
-PrefWeb / Odoo / Fotos
-        ↓
-Modelo normalizado Proposal
-        ↓
-Enriquecimiento técnico y comercial
-        ↓
-Gamma
-        ↓
-QA automático
-        ↓
-Guion y vídeo
-        ↓
-Odoo
-        ↓
-Revisión humana y envío
+- [Arquitectura actual](ARCHITECTURE.md)
+- [Guía general, operación y despliegue](PROJECT_OVERVIEW.md)
 
 ## Stack inicial
 
@@ -37,4 +24,4 @@ Revisión humana y envío
 
 ## Estado
 
-Fase inicial de arquitectura y modelado de datos.
+Aplicación web y pipeline de generación desplegados en Google Cloud Run.

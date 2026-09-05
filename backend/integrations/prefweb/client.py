@@ -232,59 +232,124 @@ class PrefWebClient:
             "Data",
             [],
         ):
-            documents.append(
-                PrefWebSalesDocumentSummary(
-                    row_id=item["RowId"],
-                    number=int(item["PrefGestNumber"]),
-                    alias_number=str(item["AliasNumber"]),
-                    version=int(item["Version"]),
-                    version_name=str(item["VersionName"]),
-                    customer_code=(
-                        str(item["CustomerCode"])
-                        if item.get("CustomerCode") is not None
-                        else None
-                    ),
-                    customer_name=str(item["CustomerName"]),
-                    request_date=(item.get("RequestDate")),
-                    shipping_work=(item.get("ShippingWork")),
-                    user_name=(item.get("UserName")),
-                    salesman_name=(item.get("SalesmanName")),
-                    entity_name=(item.get("EntityName")),
-                    remarks=(item.get("Remarks")),
-                    reference=(item.get("Reference")),
-                    customer_nif=(item.get("CustomerNif")),
-                    customer_address=(item.get("CustomerAddress")),
-                    customer_city=(item.get("CustomerCity")),
-                    customer_country=(item.get("CustomerCountry")),
-                    is_active=bool(item.get("IsActive")),
-                    is_confirmed=bool(item.get("IsConfirmed")),
-                    is_public=bool(item.get("IsPublic")),
-                    subtotal=float(
-                        item.get(
-                            "Subtotal",
-                            0,
-                        )
-                    ),
-                    tax=float(
-                        item.get(
-                            "Tax",
-                            0,
-                        )
-                    ),
-                    final_price=float(
-                        item.get(
-                            "FinalPrice",
-                            0,
-                        )
-                    ),
-                    currency_symbol=(item.get("CurrencySymbolToPrint")),
-                    currency_name=((item.get("PriceCurrency") or "").strip() or None),
-                    has_order=bool(item.get("DocHasOrder")),
-                    has_factory_version=bool(item.get("DocHasFactoryVersion")),
-                )
-            )
+            documents.append(self._summary_from_data_source_item(item))
 
         return documents
+
+    def get_sales_document_summary(
+        self,
+        *,
+        number: int,
+        version: int,
+    ) -> PrefWebSalesDocumentSummary | None:
+        """Return PrefWeb's authoritative totals for one document version."""
+
+        self.ensure_login()
+
+        response = self._session.post(
+            (f"{self.BASE_URL}/" "SalesDocuments/" "ReadToDataSourceResult"),
+            data={
+                "sort": "RequestDate-desc",
+                "page": 1,
+                "pageSize": 2,
+                "group": "",
+                "filter": (
+                    "("
+                    f"PrefGestNumber~eq~{int(number)}"
+                    "~and~"
+                    f"Version~eq~{int(version)}"
+                    ")"
+                ),
+            },
+            headers={
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            timeout=30,
+        )
+
+        response.raise_for_status()
+
+        data = response.json().get("Data", [])
+
+        if not data:
+            return None
+
+        if len(data) != 1:
+            raise RuntimeError(
+                "PrefWeb returned multiple summaries for "
+                f"document {number}, version {version}"
+            )
+
+        return self._summary_from_data_source_item(data[0])
+
+    @staticmethod
+    def _summary_from_data_source_item(
+        item: dict,
+    ) -> PrefWebSalesDocumentSummary:
+        return PrefWebSalesDocumentSummary(
+            row_id=item["RowId"],
+            number=int(item["PrefGestNumber"]),
+            alias_number=str(item["AliasNumber"]),
+            version=int(item["Version"]),
+            version_name=str(item["VersionName"]),
+            customer_code=(
+                str(item["CustomerCode"])
+                if item.get("CustomerCode") is not None
+                else None
+            ),
+            customer_name=str(item["CustomerName"]),
+            request_date=(item.get("RequestDate")),
+            shipping_work=(item.get("ShippingWork")),
+            user_name=(item.get("UserName")),
+            salesman_name=(item.get("SalesmanName")),
+            entity_name=(item.get("EntityName")),
+            remarks=(item.get("Remarks")),
+            reference=(item.get("Reference")),
+            customer_nif=(item.get("CustomerNif")),
+            customer_address=(item.get("CustomerAddress")),
+            customer_city=(item.get("CustomerCity")),
+            customer_country=(item.get("CustomerCountry")),
+            is_active=bool(item.get("IsActive")),
+            is_confirmed=bool(item.get("IsConfirmed")),
+            is_public=bool(item.get("IsPublic")),
+            subtotal=float(item.get("Subtotal", 0)),
+            tax=float(item.get("Tax", 0)),
+            final_price=float(item.get("FinalPrice", 0)),
+            currency_symbol=(item.get("CurrencySymbolToPrint")),
+            currency_name=((item.get("PriceCurrency") or "").strip() or None),
+            has_order=bool(item.get("DocHasOrder")),
+            has_factory_version=bool(item.get("DocHasFactoryVersion")),
+        )
+
+    def get_customer_for_sales_document(
+        self,
+        *,
+        code: str,
+        phone: str | None = None,
+    ) -> dict:
+        """Obtiene la ficha maestra actual del cliente desde PrefWeb."""
+        self.ensure_login()
+
+        response = self._session.post(
+            (f"{self.BASE_URL}/" "Customers/" "GetCustomerForSalesDocument"),
+            data={
+                "code": code,
+                "phone": phone or "",
+            },
+            headers={
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            timeout=30,
+        )
+
+        response.raise_for_status()
+
+        payload = response.json()
+
+        if not isinstance(payload, dict):
+            raise TypeError("Unexpected PrefWeb customer response")
+
+        return payload
 
     def get_versions(
         self,

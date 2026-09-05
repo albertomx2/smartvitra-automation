@@ -1,0 +1,13 @@
+.git/
+.venv/
+frontend/node_modules/
+frontend/dist/
+graphify-out/
+tmp/
+var/
+generated/
+backups-db/
+backups-smartvitra/
+assets/examples/
+*.bak*
+*.lock

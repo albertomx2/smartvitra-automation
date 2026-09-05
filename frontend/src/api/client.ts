@@ -7,6 +7,7 @@ import type {
 
 import type {
   CaseWorkspace,
+  GenerationDelivery,
   GenerationJob,
   PrefWebProjectSummary,
   ProjectCase,
@@ -245,6 +246,18 @@ export async function getGenerationJob(
 ): Promise<GenerationJob> {
   return request<GenerationJob>(
     `/api/generation-jobs/${jobId}`,
+  )
+}
+
+
+export async function sendGenerationJob(
+  jobId: string,
+): Promise<GenerationDelivery> {
+  return request<GenerationDelivery>(
+    `/api/generation-jobs/${jobId}/send`,
+    {
+      method: "POST",
+    },
   )
 }
 

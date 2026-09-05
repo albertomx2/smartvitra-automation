@@ -67,6 +67,8 @@ class ProjectCaseService:
             prefweb_version=project.version,
             alias_number=project.alias_number,
             customer_name=project.customer_name,
+            customer_email=project.customer_email,
+            customer_phone=project.customer_phone,
             status="draft",
         )
 
@@ -102,6 +104,20 @@ class ProjectCaseService:
         case: ProjectCase,
         project,
     ) -> ProjectCase:
+        changed = False
+
+        if case.customer_name != project.customer_name:
+            case.customer_name = project.customer_name
+            changed = True
+
+        if case.customer_email != project.customer_email:
+            case.customer_email = project.customer_email
+            changed = True
+
+        if case.customer_phone != project.customer_phone:
+            case.customer_phone = project.customer_phone
+            changed = True
+
         existing_windows = self._repository.get_windows(
             case_id=case.id,
         )
@@ -109,8 +125,6 @@ class ProjectCaseService:
         existing_by_item_id = {
             window.prefweb_item_id: window for window in existing_windows
         }
-
-        changed = False
 
         for prefweb_window in project.windows:
             item_id = prefweb_window.item_id
@@ -262,6 +276,8 @@ class ProjectCaseService:
                 alias_number=project.alias_number,
                 version_name=project.version_name,
                 customer_name=project.customer_name,
+                customer_email=project.customer_email,
+                customer_phone=project.customer_phone,
                 request_date=project.request_date,
                 reference=project.reference,
                 customer_address=project.customer_address,
@@ -273,6 +289,10 @@ class ProjectCaseService:
                 tax=project.tax,
                 final_price=project.final_price,
                 currency_symbol=project.currency_symbol,
+                subtotal_before_discount=(project.subtotal_before_discount),
+                discount_percentage=(project.discount_percentage),
+                discount_amount=(project.discount_amount),
+                has_discount=(project.has_discount),
             ),
             windows=windows,
         )

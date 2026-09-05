@@ -22,6 +22,10 @@ from backend.generation.narration.elevenlabs import (
 from backend.generation.narration.script import (
     NarrationScriptGenerator,
 )
+from backend.generation.narration.script.fixed import (
+    FIXED_NARRATION_TEXT,
+    fixed_audio_path,
+)
 from backend.generation.presentation import (
     RealPresentationGenerator,
 )
@@ -214,13 +218,32 @@ class GenerationJobRunner:
             updated_slides = []
 
             for slide in narration_script.slides:
+                source_audio_path = narration_dir / (
+                    f"slide_{slide.slide_number:02d}_source.mp3"
+                )
+
                 slide_audio_path = narration_dir / (
                     f"slide_" f"{slide.slide_number:02d}" ".mp3"
                 )
 
-                tts.generate(
-                    text=slide.narration,
-                    output_path=(slide_audio_path),
+                if slide.slide_number in FIXED_NARRATION_TEXT:
+                    source_audio_path = fixed_audio_path(
+                        slide.slide_number,
+                    )
+
+                    if not source_audio_path.exists():
+                        raise FileNotFoundError(
+                            "Missing fixed narration asset: " f"{source_audio_path}"
+                        )
+                else:
+                    tts.generate(
+                        text=slide.narration,
+                        output_path=source_audio_path,
+                    )
+
+                video_renderer.add_slide_end_padding(
+                    source_path=source_audio_path,
+                    output_path=slide_audio_path,
                 )
 
                 duration = video_renderer.probe_duration(

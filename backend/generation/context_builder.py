@@ -135,5 +135,12 @@ class GenerationContextBuilder:
                 "tax_percentage": (snapshot.project.tax),
                 "total": (snapshot.project.final_price),
                 "currency": (snapshot.project.currency_symbol),
+                "discount_applied": (snapshot.project.has_discount),
+                "subtotal_before_discount": (snapshot.project.subtotal_before_discount),
+                "discount_percentage": (snapshot.project.discount_percentage),
+                "discount_amount": (snapshot.project.discount_amount),
+                "discount_condition_days": (
+                    15 if snapshot.project.has_discount else None
+                ),
             },
         }

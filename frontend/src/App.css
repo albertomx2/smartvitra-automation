@@ -265,6 +265,17 @@ button:disabled {
   white-space: nowrap;
 }
 
+.project-price-block {
+  text-align: right;
+}
+
+.project-discount {
+  margin-top: 4px;
+  color: #9fe3bb;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .eyebrow {
   color: #737d89;
   font-size: 12px;
@@ -589,6 +600,10 @@ textarea:focus {
 
   .project-price {
     font-size: 23px;
+  }
+
+  .project-price-block {
+    text-align: left;
   }
 
   .window-card {
@@ -1165,3 +1180,30 @@ textarea:focus {
     width: 100%;
   }
 }
+
+/* SMARTVITRA SEND BUTTON START */
+
+.send-button {
+  background: #183661;
+  color: #fff;
+  border: 1px solid #183661;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.send-button:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.send-button:disabled {
+  cursor: not-allowed;
+}
+
+.send-button.sent {
+  background: #e5e7eb;
+  color: #4b5563;
+  border-color: #d1d5db;
+  opacity: 1;
+}
+
+/* SMARTVITRA SEND BUTTON END */

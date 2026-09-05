@@ -51,6 +51,16 @@ class ProjectCase(Base):
         nullable=False,
     )
 
+    customer_email: Mapped[str | None] = mapped_column(
+        String(320),
+        nullable=True,
+    )
+
+    customer_phone: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
     status: Mapped[str] = mapped_column(
         String(50),
         nullable=False,

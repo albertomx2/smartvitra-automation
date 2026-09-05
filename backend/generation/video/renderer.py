@@ -11,6 +11,7 @@ from backend.generation.video.font_normalizer import (
 
 class NarratedPresentationVideoRenderer:
     SLIDE_COUNT = 9
+    SLIDE_END_PADDING_SECONDS = 0.65
 
     def render(
         self,
@@ -127,6 +128,48 @@ class NarratedPresentationVideoRenderer:
         )
 
         return float(result.stdout.strip())
+
+    @classmethod
+    def add_slide_end_padding(
+        cls,
+        *,
+        source_path: Path,
+        output_path: Path,
+    ) -> Path:
+        """Append silence so codec/frame rounding cannot clip spoken endings."""
+
+        cls._require_binary("ffmpeg")
+
+        output_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(source_path),
+                "-af",
+                f"apad=pad_dur={cls.SLIDE_END_PADDING_SECONDS}",
+                "-vn",
+                "-c:a",
+                "libmp3lame",
+                "-q:a",
+                "2",
+                str(output_path),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+
+        if not output_path.exists() or output_path.stat().st_size == 0:
+            raise RuntimeError("FFmpeg did not create padded slide audio")
+
+        return output_path
 
     @staticmethod
     def _require_binary(

@@ -40,3 +40,12 @@ class NarrationScript(BaseModel):
     @property
     def full_text(self) -> str:
         return "\n\n".join(slide.narration for slide in self.slides)
+
+
+class VariableNarrationScript(BaseModel):
+    """Only the customer-specific slides requested from Gemini."""
+
+    slides: list[NarrationSlide] = Field(
+        min_length=4,
+        max_length=4,
+    )

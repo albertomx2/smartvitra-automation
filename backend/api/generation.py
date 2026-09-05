@@ -25,11 +25,19 @@ from backend.db.session import get_db
 from backend.generation.artifact_repository import (
     GenerationArtifactRepository,
 )
+from backend.generation.delivery import (
+    ProposalDeliveryError,
+    ProposalDeliveryService,
+)
+from backend.generation.delivery_repository import (
+    GenerationDeliveryRepository,
+)
 from backend.generation.repository import (
     GenerationJobRepository,
 )
 from backend.generation.schemas import (
     GenerationArtifactRead,
+    GenerationDeliveryRead,
     GenerationJobRead,
 )
 from backend.generation.service import (
@@ -81,6 +89,20 @@ def _to_read(
         for artifact in artifact_models
     ]
 
+    latest_delivery_model = GenerationDeliveryRepository(
+        db,
+    ).get_latest_for_job(
+        generation_job_id=job.id,
+    )
+
+    latest_delivery = (
+        GenerationDeliveryRead.model_validate(
+            latest_delivery_model,
+        )
+        if latest_delivery_model is not None
+        else None
+    )
+
     result = GenerationJobRead.model_validate(
         job,
     )
@@ -89,6 +111,7 @@ def _to_read(
         update={
             "download_url": download_url,
             "artifacts": artifacts,
+            "latest_delivery": latest_delivery,
         }
     )
 
@@ -468,4 +491,46 @@ def delete_generation_artifact(
 
     repository.delete(
         artifact,
+    )
+
+
+@router.post(
+    "/api/generation-jobs/{job_id}/send",
+    response_model=GenerationDeliveryRead,
+)
+def send_generation_to_customer(
+    job_id: uuid.UUID,
+    db: DbSession,
+) -> GenerationDeliveryRead:
+    service = GenerationJobService(db)
+
+    try:
+        job = service.get_job(
+            job_id=job_id,
+        )
+    except GenerationJobNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    try:
+        delivery = ProposalDeliveryService(
+            db,
+        ).send(
+            job=job,
+        )
+    except ProposalDeliveryError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=("Could not send proposal: " f"{type(exc).__name__}: " f"{exc}"),
+        ) from exc
+
+    return GenerationDeliveryRead.model_validate(
+        delivery,
     )

@@ -21,6 +21,32 @@ class GenerationArtifactRead(BaseModel):
     download_url: str | None = None
 
 
+class GenerationDeliveryRead(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
+    id: uuid.UUID
+    generation_job_id: uuid.UUID
+
+    status: str
+
+    recipient_name: str
+    recipient_email: str
+
+    odoo_partner_id: int | None
+    odoo_mail_id: int | None
+
+    partner_created: bool
+    attachment_count: int
+
+    sent_artifacts: list[dict[str, Any]] | None
+    error_message: str | None
+
+    created_at: datetime
+    sent_at: datetime | None
+
+
 class GenerationJobRead(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
@@ -42,6 +68,8 @@ class GenerationJobRead(BaseModel):
     artifacts: list[GenerationArtifactRead] = Field(
         default_factory=list,
     )
+
+    latest_delivery: GenerationDeliveryRead | None = None
 
     error_message: str | None
 

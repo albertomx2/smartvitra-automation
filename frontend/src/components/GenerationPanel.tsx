@@ -10,6 +10,7 @@ import {
   deleteGenerationArtifact,
   getGenerationJob,
   getLatestGenerationJob,
+  sendGenerationJob,
   uploadGenerationArtifact,
 } from "../api/client"
 
@@ -217,6 +218,9 @@ export default function GenerationPanel({
   const [uploading, setUploading] =
     useState(false)
 
+  const [sending, setSending] =
+    useState(false)
+
   const [deletingArtifactId, setDeletingArtifactId] =
     useState<string | null>(null)
 
@@ -375,6 +379,37 @@ export default function GenerationPanel({
       )
     } finally {
       setDeletingArtifactId(null)
+    }
+  }
+
+
+  async function sendToCustomer() {
+    if (!job) {
+      return
+    }
+
+    try {
+      setSending(true)
+      setError(null)
+
+      await sendGenerationJob(
+        job.id,
+      )
+
+      const current =
+        await getGenerationJob(
+          job.id,
+        )
+
+      setJob(current)
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo enviar la propuesta",
+      )
+    } finally {
+      setSending(false)
     }
   }
 
@@ -628,6 +663,21 @@ export default function GenerationPanel({
             }
           />
 
+          {job.latest_delivery?.status ===
+            "sent" && (
+            <div className="generation-delivery-status">
+              <strong>
+                ✓ Propuesta enviada
+              </strong>
+
+              <span>
+                {job.latest_delivery.recipient_name}
+                {" · "}
+                {job.latest_delivery.recipient_email}
+              </span>
+            </div>
+          )}
+
           <div className="generation-review-actions">
             <button
               className="secondary-button"
@@ -642,11 +692,24 @@ export default function GenerationPanel({
             </button>
 
             <button
-              className="send-button"
-              disabled
-              title="Se conectará posteriormente con Odoo"
+              className={
+                job.latest_delivery?.status === "sent"
+                  ? "send-button sent"
+                  : "send-button"
+              }
+              disabled={
+                sending ||
+                job.latest_delivery?.status === "sent"
+              }
+              onClick={() =>
+                void sendToCustomer()
+              }
             >
-              Enviar al cliente
+              {sending
+                ? "Enviando..."
+                : job.latest_delivery?.status === "sent"
+                  ? "✓ Propuesta enviada"
+                  : "Enviar al cliente"}
             </button>
 
             <button

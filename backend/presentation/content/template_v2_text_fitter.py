@@ -95,30 +95,13 @@ def _fit_sentence(
 ) -> str:
     value = " ".join(text.split())
 
-    dangling_words = {
-        "a",
-        "al",
-        "con",
-        "de",
-        "del",
+    dangling_words = _INCOMPLETE_ENDINGS | {
         "donde",
-        "e",
-        "el",
-        "en",
-        "la",
-        "las",
-        "los",
-        "o",
-        "para",
-        "por",
         "porque",
-        "que",
-        "sin",
         "su",
         "sus",
         "tu",
         "tus",
-        "y",
     }
 
     def close_sentence(

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import boto3
+from botocore.config import Config
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -49,6 +50,14 @@ class R2StorageClient:
             aws_access_key_id=resolved_access_key,
             aws_secret_access_key=resolved_secret_key,
             region_name="auto",
+            config=Config(
+                connect_timeout=10,
+                read_timeout=60,
+                retries={
+                    "max_attempts": 3,
+                    "mode": "standard",
+                },
+            ),
         )
 
     @property
@@ -106,11 +115,36 @@ class R2StorageClient:
             exist_ok=True,
         )
 
-        self._client.download_file(
-            self._bucket,
-            storage_key,
-            str(destination),
+        temporary = destination.with_suffix(
+            destination.suffix + ".part",
         )
+
+        response = self._client.get_object(
+            Bucket=self._bucket,
+            Key=storage_key,
+        )
+
+        body = response["Body"]
+
+        try:
+            with temporary.open("wb") as output:
+                while True:
+                    chunk = body.read(
+                        1024 * 1024,
+                    )
+
+                    if not chunk:
+                        break
+
+                    output.write(chunk)
+
+            temporary.replace(destination)
+
+        finally:
+            body.close()
+
+            if temporary.exists():
+                temporary.unlink()
 
         return destination
 

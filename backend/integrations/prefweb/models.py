@@ -68,6 +68,10 @@ class PrefWebSalesDocument(BaseModel):
     payment_term: str | None = None
     tax: float | None = None
 
+    subtotal_before_discount: float | None = None
+    commercial_discount_percentage: float | None = None
+    commercial_discount_amount: float | None = None
+
     customer: PrefWebCustomer
 
     items: list[PrefWebSalesItem]
@@ -84,6 +88,8 @@ class PrefWebSalesDocumentSummary(BaseModel):
 
     customer_code: str | None = None
     customer_name: str
+    customer_email: str | None = None
+    customer_phone: str | None = None
 
     request_date: str | None = None
 
@@ -145,6 +151,8 @@ class PrefWebProject(BaseModel):
     version_name: str
 
     customer_name: str
+    customer_email: str | None = None
+    customer_phone: str | None = None
 
     request_date: str | None = None
     reference: str | None = None
@@ -164,6 +172,11 @@ class PrefWebProject(BaseModel):
     currency_symbol: str = "€"
 
     windows: list[PrefWebProjectWindow]
+
+    subtotal_before_discount: float | None = None
+    discount_percentage: float | None = None
+    discount_amount: float = 0.0
+    has_discount: bool = False
 
 
 class PrefWebDocumentVersion(BaseModel):

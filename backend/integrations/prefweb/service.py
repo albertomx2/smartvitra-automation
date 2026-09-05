@@ -65,6 +65,17 @@ class PrefWebService:
             html,
         )
 
+        summary = self._client.get_sales_document_summary(
+            number=number,
+            version=version,
+        )
+
+        if summary is not None:
+            return self._build_project_from_summary(
+                document=document,
+                summary=summary,
+            )
+
         return self._build_project_without_summary(
             document=document,
         )
@@ -84,6 +95,22 @@ class PrefWebService:
             item_id=item_id,
         )
 
+    def _get_current_customer(
+        self,
+        *,
+        document,
+    ) -> dict:
+        """Obtiene la ficha maestra actual del cliente de PrefWeb."""
+        code = document.customer.code
+
+        if not code:
+            return {}
+
+        return self._client.get_customer_for_sales_document(
+            code=str(code),
+            phone=document.customer.phone,
+        )
+
     def get_project(
         self,
         *,
@@ -100,12 +127,32 @@ class PrefWebService:
             html,
         )
 
+        return self._build_project_from_summary(
+            document=document,
+            summary=summary,
+        )
+
+    def _build_project_from_summary(
+        self,
+        *,
+        document,
+        summary: PrefWebSalesDocumentSummary,
+    ) -> PrefWebProject:
+        current_customer = self._get_current_customer(
+            document=document,
+        )
+
+        discount_amount = float(document.commercial_discount_amount or 0)
+        discount_percentage = document.commercial_discount_percentage
+
         return PrefWebProject(
             number=document.number,
             alias_number=(document.alias_number or summary.alias_number),
             version=document.version,
             version_name=(document.version_name or summary.version_name),
-            customer_name=(document.customer.name),
+            customer_name=(current_customer.get("Name") or document.customer.name),
+            customer_email=(current_customer.get("Email") or document.customer.email),
+            customer_phone=(document.customer.mobile_phone or document.customer.phone),
             request_date=(document.request_date),
             reference=document.reference,
             payment_term=(document.payment_term),
@@ -135,25 +182,50 @@ class PrefWebService:
                 for item in document.items
                 if item.item_type == "Design"
             ],
+            subtotal_before_discount=(
+                document.subtotal_before_discount
+                if document.subtotal_before_discount is not None
+                else summary.subtotal + discount_amount
+            ),
+            discount_percentage=discount_percentage,
+            discount_amount=discount_amount,
+            has_discount=(discount_amount > 0 or float(discount_percentage or 0) > 0),
         )
 
-    @staticmethod
     def _build_project_without_summary(
+        self,
         *,
         document,
     ) -> PrefWebProject:
-        subtotal = sum(item.total_amount for item in document.items)
+        subtotal_before_discount = (
+            document.subtotal_before_discount
+            if document.subtotal_before_discount is not None
+            else sum(item.total_amount or 0 for item in document.items)
+        )
+
+        discount_amount = float(document.commercial_discount_amount or 0)
+
+        subtotal = max(
+            0.0,
+            subtotal_before_discount - discount_amount,
+        )
 
         tax = float(document.tax or 0)
 
         final_price = subtotal * (1 + tax / 100)
+
+        current_customer = self._get_current_customer(
+            document=document,
+        )
 
         return PrefWebProject(
             number=document.number,
             alias_number=(document.alias_number or str(document.number)),
             version=document.version,
             version_name=(document.version_name or f"Versión {document.version}"),
-            customer_name=(document.customer.name),
+            customer_name=(current_customer.get("Name") or document.customer.name),
+            customer_email=(current_customer.get("Email") or document.customer.email),
+            customer_phone=(document.customer.mobile_phone or document.customer.phone),
             request_date=(document.request_date),
             reference=document.reference,
             payment_term=(document.payment_term),
@@ -182,4 +254,11 @@ class PrefWebService:
                 for item in document.items
                 if item.item_type == "Design"
             ],
+            subtotal_before_discount=subtotal_before_discount,
+            discount_percentage=(document.commercial_discount_percentage),
+            discount_amount=discount_amount,
+            has_discount=(
+                discount_amount > 0
+                or float(document.commercial_discount_percentage or 0) > 0
+            ),
         )

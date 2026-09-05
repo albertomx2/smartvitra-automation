@@ -90,6 +90,12 @@ class PrefWebSalesDocumentParser:
             soup,
         )
 
+        (
+            subtotal_before_discount,
+            commercial_discount_percentage,
+            commercial_discount_amount,
+        ) = self._parse_commercial_discount(soup)
+
         return PrefWebSalesDocument(
             number=number,
             version=version,
@@ -123,8 +129,69 @@ class PrefWebSalesDocumentParser:
                     "Tax",
                 ),
             ),
+            subtotal_before_discount=subtotal_before_discount,
+            commercial_discount_percentage=(commercial_discount_percentage),
+            commercial_discount_amount=(commercial_discount_amount),
             customer=customer,
             items=items,
+        )
+
+    def _parse_commercial_discount(
+        self,
+        soup: BeautifulSoup,
+    ) -> tuple[float | None, float | None, float | None]:
+        """Read PrefWeb's document-level commercial discount rows.
+
+        PrefWeb identifies subtotal concepts with numeric ``Subtotal_Kind``
+        values. Kind 5 is the base subtotal and kind 6 is the commercial
+        discount. These adjustments are not included in individual item
+        totals, which is why summing the item rows overstates discounted
+        proposals.
+        """
+
+        subtotal_before_discount: float | None = None
+        discount_percentage: float | None = None
+        discount_amount: float | None = None
+
+        for element in soup.find_all(
+            id=re.compile(r"^Subtotal_Kind_"),
+        ):
+            if not isinstance(element, Tag):
+                continue
+
+            element_id = element.get("id")
+            kind = element.get("value")
+
+            if not isinstance(element_id, str):
+                continue
+
+            suffix = element_id.removeprefix("Subtotal_Kind_")
+
+            if kind == "5":
+                subtotal_before_discount = self._parse_float(
+                    self._value(
+                        soup,
+                        f"Subtotal_Amount_{suffix}",
+                    )
+                )
+            elif kind == "6":
+                discount_percentage = self._parse_float(
+                    self._value(
+                        soup,
+                        f"Subtotal_Percentage_{suffix}",
+                    )
+                )
+                discount_amount = self._parse_float(
+                    self._value(
+                        soup,
+                        f"Subtotal_Amount_{suffix}",
+                    )
+                )
+
+        return (
+            subtotal_before_discount,
+            discount_percentage,
+            discount_amount,
         )
 
     def _parse_items(

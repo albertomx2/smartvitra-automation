@@ -31,6 +31,7 @@ htmlcov/
 # Temporary files
 tmp/
 temp/
+*.bak*
 
 # Generated artifacts
 generated/
@@ -52,6 +53,9 @@ experiments/pptx_template/output/
 
 # Runtime files
 var/
+
+# Local Graphify index
+graphify-out/
 
 # Local PowerPoint template backups
 /template2.pptx

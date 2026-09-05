@@ -293,10 +293,24 @@ function App() {
             </div>
           </div>
 
-          <div className="project-price">
-            {formatMoney(
-              workspace.project
-                .final_price,
+          <div className="project-price-block">
+            <div className="project-price">
+              {formatMoney(
+                workspace.project
+                  .final_price,
+              )}
+            </div>
+
+            {workspace.project
+              .has_discount && (
+              <div className="project-discount">
+                Incluye
+                {workspace.project
+                  .discount_percentage
+                  ? ` un ${workspace.project.discount_percentage}%`
+                  : ""}
+                {" de descuento comercial"}
+              </div>
             )}
           </div>
         </section>
