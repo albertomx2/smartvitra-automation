@@ -1,3 +1,4 @@
+from pptx.enum.text import MSO_AUTO_SIZE
 from pptx.util import Inches
 
 from backend.rendering.pptx.renderer import (
@@ -16,7 +17,7 @@ class TemplateV2LayoutRenderer:
         """Give variable customer data enough room without moving row labels."""
 
         sizes = {
-            "sv_s01_customer_name": (5.3, 0.46, True),
+            "sv_s01_customer_name": (5.45, 0.34, False),
             "sv_s01_address": (5.3, 0.46, True),
             "sv_s01_proposal_number": (2.0, 0.3, False),
             "sv_s01_date": (2.0, 0.3, False),
@@ -26,6 +27,11 @@ class TemplateV2LayoutRenderer:
             shape.width = Inches(width)
             shape.height = Inches(height)
             renderer.lock_text_box_geometry(shape_name, word_wrap=word_wrap)
+
+        customer_name = renderer.find_shape(
+            "sv_s01_customer_name",
+        )
+        customer_name.text_frame.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
 
     def render_slide03_solutions(
         self,

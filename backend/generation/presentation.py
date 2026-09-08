@@ -11,6 +11,9 @@ from backend.generation.payment_terms import (
 from backend.generation.snapshot import (
     CaseGenerationSnapshot,
 )
+from backend.generation.text_normalization import (
+    expand_street_abbreviations,
+)
 from backend.integrations.google_maps.street_view import (
     GoogleStreetViewFacadeClient,
 )
@@ -301,8 +304,8 @@ class RealPresentationGenerator:
             project.customer_address2,
         ]
 
-        street = " ".join(
-            value.strip() for value in street_parts if value and value.strip()
+        street = expand_street_abbreviations(
+            " ".join(value.strip() for value in street_parts if value and value.strip())
         )
 
         locality_parts = [

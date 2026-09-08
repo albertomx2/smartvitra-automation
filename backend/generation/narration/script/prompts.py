@@ -505,6 +505,11 @@ Slide 3 (solution_transformation): explica cómo la propuesta responde a esos
 problemas mediante beneficios sustentados por los datos. Evita una ficha
 técnica.
 
+No pronuncies nunca referencias internas, códigos, marcas, series, colores ni
+el nombre exacto de un modelo de ventana. Habla de "la solución propuesta",
+"esta elección de ventanas" o "la configuración elegida". Si una dirección
+contiene la abreviatura "C/", pronúnciala siempre como "Calle".
+
 commercial_objective debe ser respectivamente: personalized_opening,
 problem_awareness y solution_transformation.
 """

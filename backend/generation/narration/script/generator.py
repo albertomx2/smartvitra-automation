@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 
 from backend.generation.narration.script.fitter import (
     NarrationScriptFitter,
@@ -18,6 +19,9 @@ from backend.generation.narration.script.prompts import (
 )
 from backend.generation.narration.script.validator import (
     NarrationScriptValidator,
+)
+from backend.generation.text_normalization import (
+    expand_street_abbreviations,
 )
 from backend.integrations.llm.models import (
     StructuredLLMClient,
@@ -42,14 +46,10 @@ class NarrationScriptGenerator:
         context: dict,
         presentation_content: TemplateV2PresentationContent,
     ) -> NarrationScript:
-        payload = {
-            "customer_context": context,
-            "presentation_content": (
-                presentation_content.model_dump(
-                    mode="json",
-                )
-            ),
-        }
+        payload = self._build_variable_payload(
+            context=context,
+            presentation_content=presentation_content,
+        )
 
         variable_script = self._llm_client.generate_structured(
             system_prompt=(VARIABLE_NARRATION_SYSTEM_PROMPT),
@@ -73,6 +73,21 @@ class NarrationScriptGenerator:
 
         if actual_variable_slides != expected_variable_slides:
             raise ValueError("Gemini narration must contain only slides 1, 2 and 3")
+
+        variable_script = variable_script.model_copy(
+            update={
+                "slides": [
+                    slide.model_copy(
+                        update={
+                            "narration": expand_street_abbreviations(
+                                slide.narration,
+                            )
+                        }
+                    )
+                    for slide in variable_script.slides
+                ]
+            }
+        )
 
         slides_by_number = {
             slide.slide_number: slide for slide in variable_script.slides
@@ -106,6 +121,56 @@ class NarrationScriptGenerator:
         )
 
         return script
+
+    @staticmethod
+    def _build_variable_payload(
+        *,
+        context: dict,
+        presentation_content: TemplateV2PresentationContent,
+    ) -> dict:
+        """Keep technical product identifiers out of Gemini's spoken copy."""
+
+        narration_context = deepcopy(context)
+
+        customer = narration_context.get("customer")
+        if isinstance(customer, dict):
+            for key in ("address", "address2"):
+                value = customer.get(key)
+                if isinstance(value, str):
+                    customer[key] = expand_street_abbreviations(value)
+
+        proposal = narration_context.get("proposal")
+        if isinstance(proposal, dict):
+            openings = proposal.get("openings")
+            if isinstance(openings, list):
+                allowed_opening_fields = {
+                    "room",
+                    "quantity",
+                    "commercial_notes",
+                }
+                proposal["openings"] = [
+                    {
+                        key: value
+                        for key, value in opening.items()
+                        if key in allowed_opening_fields
+                    }
+                    for opening in openings
+                    if isinstance(opening, dict)
+                ]
+
+        visible_content = presentation_content.model_dump(
+            mode="json",
+        )
+        visible_content.pop("slide07", None)
+
+        slide03 = visible_content.get("slide03")
+        if isinstance(slide03, dict):
+            slide03.pop("solutions", None)
+
+        return {
+            "customer_context": narration_context,
+            "presentation_content": visible_content,
+        }
 
     @staticmethod
     def _build_investment_slide(

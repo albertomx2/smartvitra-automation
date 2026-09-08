@@ -37,7 +37,12 @@ def test_generator_requests_only_variable_slides_and_inserts_fixed_copy() -> Non
                         slide_number=number,
                         commercial_objective=objective,
                         estimated_duration_seconds=15,
-                        narration=_variable_text(f"slide{number}"),
+                        narration=(
+                            "Hola desde C/ Pablo Vidal. "
+                            + _variable_text(f"slide{number}")
+                            if number == 1
+                            else _variable_text(f"slide{number}")
+                        ),
                     )
                     for number, objective in [
                         (1, "personalized_opening"),
@@ -51,15 +56,50 @@ def test_generator_requests_only_variable_slides_and_inserts_fixed_copy() -> Non
 
     script = NarrationScriptGenerator(llm).generate(
         context={
+            "customer": {
+                "name": "Antonio Manzaneque Conde",
+                "address": "C/ Pablo Vidal 7",
+            },
+            "proposal": {
+                "openings": [
+                    {
+                        "room": "Habitación principal",
+                        "quantity": 1,
+                        "commercial_notes": None,
+                        "window_type": "Corredera Islide 2 hojas",
+                        "reference": "IS2200 V",
+                        "color": "CE BRONCE",
+                        "dimensions": "L=1.400;A=1.165",
+                    }
+                ]
+            },
             "pricing": {
                 "discount_applied": True,
                 "discount_condition_days": 15,
                 "discount_percentage": 15,
                 "total": 4478.19,
-            }
+            },
         },
         presentation_content=SimpleNamespace(
-            model_dump=lambda **kwargs: {},
+            model_dump=lambda **kwargs: {
+                "slide01": {
+                    "address": "Calle Pablo Vidal 7",
+                },
+                "slide02": {},
+                "slide03": {
+                    "solutions": [
+                        {
+                            "text": "Modelo IS2200 V",
+                        }
+                    ],
+                    "main_benefit": "Más confort",
+                },
+                "slide07": {
+                    "project_summary": [
+                        "Ventana corredera Islide IS2200 V",
+                    ]
+                },
+            },
             slide07=SimpleNamespace(
                 payment_terms=[
                     "50% al confirmar el pedido",
@@ -76,6 +116,13 @@ def test_generator_requests_only_variable_slides_and_inserts_fixed_copy() -> Non
         assert script.slides[slide_number - 1].narration == expected_text
 
     assert '"discount_applied": true' in llm.user_prompt
+    assert "Calle Pablo Vidal 7" in llm.user_prompt
+    assert "C/ Pablo Vidal 7" not in llm.user_prompt
+    assert "IS2200" not in llm.user_prompt
+    assert "Islide" not in llm.user_prompt
+    assert "CE BRONCE" not in llm.user_prompt
+    assert "Calle Pablo Vidal" in script.slides[0].narration
+    assert "C/ Pablo Vidal" not in script.slides[0].narration
     assert "próximos 15 días" in script.slides[6].narration
     assert "15 por ciento" in script.slides[6].narration
     assert "4.478,19 euros" in script.slides[6].narration
