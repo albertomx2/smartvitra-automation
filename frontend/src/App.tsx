@@ -94,6 +94,8 @@ function SaveIndicator({
 function App() {
   const [query, setQuery] =
     useState("")
+  const [reloadCount, setReloadCount] =
+    useState(0)
 
   const [results, setResults] =
     useState<
@@ -154,7 +156,7 @@ function App() {
         timeout,
       )
     }
-  }, [query])
+  }, [query, reloadCount])
 
   async function openProject(
     project: PrefWebProjectSummary,
@@ -231,6 +233,7 @@ function App() {
               setWorkspace(null)
               setQuery("")
               setError(null)
+              setReloadCount((count) => count + 1)
             }}
           >
             Cambiar presupuesto
@@ -453,6 +456,15 @@ function App() {
                           project.customer_name
                         }
                       </strong>
+
+                      <span className={`status-pill proposal-status ${project.proposal_status}`}>
+                        {{
+                          not_started: "Sin hacer",
+                          draft_in_progress: "Borrador en curso",
+                          generated: "Propuesta generada",
+                          sent: "Enviado al cliente",
+                        }[project.proposal_status]}
+                      </span>
 
                       {project.is_active && (
                         <span className="status-pill active">

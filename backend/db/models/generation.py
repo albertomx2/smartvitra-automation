@@ -79,6 +79,11 @@ class GenerationJob(Base):
         nullable=True,
     )
 
+    odoo_partner_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    odoo_partner_created: Mapped[bool | None] = mapped_column(nullable=True)
+    odoo_sale_order_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    odoo_sale_order_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

@@ -1,5 +1,10 @@
-from fastapi import APIRouter, HTTPException, Query, Response
+from typing import Annotated
 
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from sqlalchemy.orm import Session
+
+from backend.cases.proposal_status import proposal_statuses_for_documents
+from backend.db.session import get_db
 from backend.integrations.prefweb.client import (
     PrefWebAuthenticationError,
 )
@@ -11,6 +16,8 @@ from backend.integrations.prefweb.session import (
 router = APIRouter(
     tags=["prefweb"],
 )
+
+DbSession = Annotated[Session, Depends(get_db)]
 
 
 def _service() -> PrefWebService:
@@ -32,6 +39,7 @@ def _service() -> PrefWebService:
 
 @router.get("/projects")
 def search_projects(
+    db: DbSession,
     q: str = Query(
         default="",
         description="Optional customer, reference or budget search term.",
@@ -49,11 +57,21 @@ def search_projects(
     service = _service()
 
     try:
-        return service.search_projects(
+        projects = service.search_projects(
             query=q,
             page=page,
             page_size=page_size,
         )
+        statuses = proposal_statuses_for_documents(
+            db, [(project.number, project.version) for project in projects]
+        )
+        return [
+            {
+                **project.model_dump(),
+                "proposal_status": statuses[(project.number, project.version)],
+            }
+            for project in projects
+        ]
     except RuntimeError as exc:
         raise HTTPException(
             status_code=502,

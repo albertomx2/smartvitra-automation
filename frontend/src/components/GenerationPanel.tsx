@@ -102,7 +102,9 @@ function buildAttachments(
             artifact.kind ===
               "video" ||
             artifact.kind ===
-              "attachment"
+              "attachment" ||
+            artifact.kind ===
+              "odoo_quote"
           ),
       )
       .map((artifact) => {
@@ -131,6 +133,15 @@ function buildAttachments(
           kind = "video"
           label =
             "Vídeo personalizado"
+        }
+
+        if (
+          artifact.kind ===
+          "odoo_quote"
+        ) {
+          kind = "pdf"
+          label =
+            "Presupuesto detallado Odoo"
         }
 
         if (
@@ -563,6 +574,11 @@ export default function GenerationPanel({
                 documentación adicional antes
                 del envío.
               </p>
+              {job.odoo_sale_order_name && (
+                <p>
+                  Presupuesto en Odoo: {job.odoo_sale_order_name}
+                </p>
+              )}
             </div>
 
             <button
@@ -735,6 +751,11 @@ export default function GenerationPanel({
           <p>
             La propuesta está lista para revisar.
           </p>
+          {job.odoo_sale_order_name && (
+            <p>
+              Presupuesto en Odoo: {job.odoo_sale_order_name}
+            </p>
+          )}
         </div>
 
         <div className="generation-actions">

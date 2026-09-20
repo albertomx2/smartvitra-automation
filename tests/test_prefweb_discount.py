@@ -79,6 +79,8 @@ def test_project_uses_authoritative_discounted_prefweb_totals() -> None:
     assert project.discount_percentage == 15
     assert project.discount_amount == 653.11
     assert project.has_discount is True
+    assert len(project.items) == 1
+    assert project.commercial_discount_amount == 653.11
 
 
 def test_project_detects_design_line_discount_and_ignores_free_services() -> None:
@@ -135,6 +137,8 @@ def test_project_detects_design_line_discount_and_ignores_free_services() -> Non
     )
 
     assert project.has_discount is True
+    assert len(project.items) == 2
+    assert project.commercial_discount_amount == 0
     assert project.discount_percentage == 12
     assert round(project.discount_amount, 2) == 176.44
     assert round(project.subtotal_before_discount or 0, 2) == 1470.37

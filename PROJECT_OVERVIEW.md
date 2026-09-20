@@ -21,6 +21,7 @@ SmartVitra transforma un presupuesto técnico y la información recogida durante
 
 - PrefWeb es la fuente de los datos técnicos, cliente y precios. Para totales con descuento debe usarse el resumen exacto del documento, no la suma de líneas.
 - PostgreSQL conserva casos, trabajos, estados, artefactos y entregas.
+- Odoo conserva el contacto comercial y el presupuesto de Ventas en borrador creados al pulsar «Generar»; PrefWeb sigue siendo la fuente del importe final.
 - R2 conserva fotos y resultados cuando `STORAGE_BACKEND=r2`.
 - El snapshot de generación evita que un caso cambie a mitad del pipeline.
 - La imagen desplegada en Cloud Run, no GitHub por sí solo, determina el código que ejecuta producción.
@@ -32,6 +33,10 @@ SmartVitra transforma un presupuesto técnico y la información recogida durante
 - Los audios fijos solo deben regenerarse si cambia deliberadamente su texto o voz: `PYTHONPATH=. python scripts/generate_fixed_narration_audio.py --force`.
 - Si hay descuento de cabecera o de línea de ventana, el contexto incluye `discount_applied=true` y la slide 7 garantiza el porcentaje, el precio final y la condición de contratación en los próximos 15 días.
 - El montaje añade una cola silenciosa por slide para absorber redondeos de códec y fotogramas.
+
+## Estado comercial y Odoo
+
+La pantalla principal distingue «Sin hacer», «Borrador en curso», «Propuesta generada» y «Enviado al cliente» según el caso, su última generación y el envío registrado. Al generar, se crea o reutiliza el contacto por email y se crea un presupuesto borrador por trabajo en Odoo con todas las partidas de PrefWeb. Se utiliza un único producto técnico de Odoo (`SV-PREFWEB-LINE`) para las líneas; sus descripciones conservan los títulos propios de cada partida. Un descuento de cabecera se añade aparte del descuento de cada línea y se comprueban los totales antes de lanzar la generación. El PDF oficial del presupuesto se descarga mediante el acceso de portal de Odoo y se añade como documento descargable y adjunto del envío; si Odoo no puede producirlo, la propuesta continúa sin ese adjunto. El envío posterior reutiliza el contacto asociado.
 
 ## Desarrollo y validación
 

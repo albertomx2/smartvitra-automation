@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PrefWebEntity(BaseModel):
@@ -175,10 +175,12 @@ class PrefWebProject(BaseModel):
     currency_symbol: str = "€"
 
     windows: list[PrefWebProjectWindow]
+    items: list[PrefWebSalesItem] = Field(default_factory=list)
 
     subtotal_before_discount: float | None = None
     discount_percentage: float | None = None
     discount_amount: float = 0.0
+    commercial_discount_amount: float = 0.0
     has_discount: bool = False
 
 

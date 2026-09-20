@@ -190,9 +190,11 @@ class PrefWebService:
                 for item in document.items
                 if item.item_type == "Design"
             ],
+            items=document.items,
             subtotal_before_discount=subtotal_before_discount,
             discount_percentage=discount_percentage,
             discount_amount=discount_amount,
+            commercial_discount_amount=float(document.commercial_discount_amount or 0),
             has_discount=(discount_amount > 0 or float(discount_percentage or 0) > 0),
         )
 
@@ -262,9 +264,11 @@ class PrefWebService:
                 for item in document.items
                 if item.item_type == "Design"
             ],
+            items=document.items,
             subtotal_before_discount=subtotal_before_discount,
             discount_percentage=discount_percentage,
             discount_amount=discount_amount,
+            commercial_discount_amount=float(document.commercial_discount_amount or 0),
             has_discount=(discount_amount > 0 or float(discount_percentage or 0) > 0),
         )
 

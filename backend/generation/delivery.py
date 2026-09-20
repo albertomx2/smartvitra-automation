@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from backend.cases.repository import CaseRepository
-from backend.cases.service import ProjectCaseService
 from backend.db.models.generation import (
     GenerationDelivery,
     GenerationJob,
@@ -17,9 +16,6 @@ from backend.generation.delivery_repository import (
     GenerationDeliveryRepository,
 )
 from backend.integrations.odoo import OdooClient
-from backend.integrations.prefweb.service import (
-    PrefWebService,
-)
 from backend.storage.generated import (
     GeneratedFileStorage,
 )
@@ -37,6 +33,7 @@ class ProposalDeliveryService:
         "presentation",
         "video",
         "attachment",
+        "odoo_quote",
     }
 
     def __init__(
@@ -71,28 +68,13 @@ class ProposalDeliveryService:
         if case is None:
             raise ProposalDeliveryError("Project case not found")
 
-        prefweb = PrefWebService()
-
-        project = prefweb.get_project_by_number(
-            number=case.prefweb_number,
-            version=case.prefweb_version,
-        )
-
-        case_service = ProjectCaseService(
-            self._db,
-            prefweb_service=prefweb,
-        )
-
-        case = case_service.sync_windows_from_prefweb(
-            case=case,
-            project=project,
-        )
-
-        recipient_name = (project.customer_name or case.customer_name).strip()
-
-        recipient_email = (project.customer_email or case.customer_email or "").strip()
-
-        recipient_phone = project.customer_phone or case.customer_phone
+        snapshot_project = (job.input_snapshot or {}).get("project") or {}
+        recipient_name = (
+            snapshot_project.get("customer_name") or case.customer_name
+        ).strip()
+        recipient_email = (
+            snapshot_project.get("customer_email") or case.customer_email or ""
+        ).strip()
 
         if not recipient_email:
             raise ProposalDeliveryError("Customer has no email address in PrefWeb")
@@ -156,11 +138,17 @@ class ProposalDeliveryService:
 
             odoo = OdooClient()
 
-            partner, partner_created = odoo.find_or_create_partner(
-                name=recipient_name,
-                email=recipient_email,
-                phone=recipient_phone,
-            )
+            if job.odoo_partner_id is not None:
+                partner_id = job.odoo_partner_id
+                partner_created = bool(job.odoo_partner_created)
+            else:
+                # Older generations predate Odoo preparation at Generate time.
+                partner, partner_created = odoo.find_or_create_partner(
+                    name=recipient_name,
+                    email=recipient_email,
+                    phone=snapshot_project.get("customer_phone") or case.customer_phone,
+                )
+                partner_id = int(partner["id"])
 
             attachment_ids: list[int] = []
 
@@ -188,16 +176,17 @@ class ProposalDeliveryService:
                 )
 
             mail_id = odoo.send_proposal_email(
-                partner_id=int(partner["id"]),
+                partner_id=partner_id,
                 partner_name=recipient_name,
                 attachment_ids=attachment_ids,
                 has_manual_attachments=any(
                     artifact.kind == "attachment" for artifact in artifacts
                 ),
+                has_odoo_quote="odoo_quote" in kinds,
             )
 
             delivery.status = "sent"
-            delivery.odoo_partner_id = int(partner["id"])
+            delivery.odoo_partner_id = partner_id
             delivery.odoo_mail_id = mail_id
             delivery.partner_created = partner_created
             delivery.attachment_count = len(attachment_ids)

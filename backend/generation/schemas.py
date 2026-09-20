@@ -73,6 +73,10 @@ class GenerationJobRead(BaseModel):
 
     error_message: str | None
 
+    odoo_partner_id: int | None = None
+    odoo_sale_order_id: int | None = None
+    odoo_sale_order_name: str | None = None
+
     created_at: datetime
     started_at: datetime | None
     completed_at: datetime | None

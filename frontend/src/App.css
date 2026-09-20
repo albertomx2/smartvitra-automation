@@ -200,6 +200,26 @@ button:disabled {
   color: #276738;
 }
 
+.proposal-status.not_started {
+  background: #eef1f4;
+  color: #5c6673;
+}
+
+.proposal-status.draft_in_progress {
+  background: #fff3dc;
+  color: #88580a;
+}
+
+.proposal-status.generated {
+  background: #e4efff;
+  color: #24559a;
+}
+
+.proposal-status.sent {
+  background: #e2f5e8;
+  color: #24703c;
+}
+
 .error,
 .photo-error {
   margin-top: 14px;

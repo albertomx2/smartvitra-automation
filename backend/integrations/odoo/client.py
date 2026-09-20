@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+from html import escape
 from typing import Any
+from urllib.parse import urljoin, urlsplit
 
 import requests
 
@@ -113,6 +115,10 @@ class OdooClient:
         name: str,
         email: str,
         phone: str | None = None,
+        street: str | None = None,
+        street2: str | None = None,
+        postal_code: str | None = None,
+        city: str | None = None,
     ) -> dict[str, Any]:
         values: dict[str, Any] = {
             "name": name.strip(),
@@ -122,6 +128,14 @@ class OdooClient:
 
         if phone:
             values["phone"] = phone.strip()
+        for field, value in (
+            ("street", street),
+            ("street2", street2),
+            ("zip", postal_code),
+            ("city", city),
+        ):
+            if value:
+                values[field] = value.strip()
 
         result = self._request(
             model="res.partner",
@@ -165,6 +179,10 @@ class OdooClient:
         name: str,
         email: str,
         phone: str | None = None,
+        street: str | None = None,
+        street2: str | None = None,
+        postal_code: str | None = None,
+        city: str | None = None,
     ) -> tuple[dict[str, Any], bool]:
         existing = self.search_partner_by_email(
             email=email,
@@ -177,9 +195,191 @@ class OdooClient:
             name=name,
             email=email,
             phone=phone,
+            street=street,
+            street2=street2,
+            postal_code=postal_code,
+            city=city,
         )
 
         return created, True
+
+    def get_sale_tax_ids(self, *, rate: float) -> tuple[int, int]:
+        """Return the sales tax for goods and services at a PrefWeb rate."""
+        if rate == 0:
+            return 0, 0
+
+        result = self._request(
+            model="account.tax",
+            method="search_read",
+            payload={
+                "domain": [
+                    ["type_tax_use", "=", "sale"],
+                    ["amount_type", "=", "percent"],
+                    ["amount", "=", rate],
+                    ["active", "=", True],
+                ],
+                "fields": ["id", "name"],
+                "limit": 30,
+            },
+        )
+        if not isinstance(result, list) or not result:
+            raise RuntimeError(f"No active Odoo sales tax found for {rate}%")
+
+        goods = next(
+            (row for row in result if str(row["name"]).upper().endswith(" G")),
+            result[0],
+        )
+        services = next(
+            (row for row in result if str(row["name"]).upper().endswith(" S")),
+            goods,
+        )
+        return int(goods["id"]), int(services["id"])
+
+    def ensure_prefweb_line_product(self) -> tuple[int, int]:
+        """Reuse one technical product; item titles live on quotation lines."""
+        code = "SV-PREFWEB-LINE"
+        products = self._request(
+            model="product.product",
+            method="search_read",
+            payload={
+                "domain": [["default_code", "=", code]],
+                "fields": ["id", "uom_id"],
+                "limit": 2,
+            },
+        )
+        if not isinstance(products, list) or len(products) > 1:
+            raise RuntimeError("Unexpected SmartVitra Odoo product response")
+        if not products:
+            created = self._request(
+                model="product.product",
+                method="create",
+                payload={
+                    "vals_list": {
+                        "name": "Partida PrefWeb SmartVitra",
+                        "default_code": code,
+                        "type": "service",
+                        "sale_ok": True,
+                    }
+                },
+            )
+            product_id = int(created[0] if isinstance(created, list) else created)
+            products = self._request(
+                model="product.product",
+                method="read",
+                payload={"ids": [product_id], "fields": ["id", "uom_id"]},
+            )
+            if not isinstance(products, list) or len(products) != 1:
+                raise RuntimeError("Created Odoo product could not be read back")
+
+        product = products[0]
+        uom = product.get("uom_id")
+        if not isinstance(uom, list) or not uom:
+            raise RuntimeError("Odoo SmartVitra product has no unit of measure")
+        return int(product["id"]), int(uom[0])
+
+    def find_sale_quote_by_origin(self, *, origin: str) -> dict[str, Any] | None:
+        result = self._request(
+            model="sale.order",
+            method="search_read",
+            payload={
+                "domain": [["origin", "=", origin]],
+                "fields": [
+                    "id",
+                    "name",
+                    "state",
+                    "partner_id",
+                    "amount_total",
+                    "amount_untaxed",
+                ],
+                "limit": 2,
+            },
+        )
+        if not isinstance(result, list):
+            raise TypeError("Unexpected Odoo sale order response")
+        if len(result) > 1:
+            raise RuntimeError(f"Multiple Odoo quotes found for {origin}")
+        return result[0] if result else None
+
+    def create_sale_quote(
+        self,
+        *,
+        partner_id: int,
+        origin: str,
+        reference: str,
+        prefweb_number: str,
+        payment_term: str | None,
+        lines: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        existing = self.find_sale_quote_by_origin(origin=origin)
+        if existing is not None:
+            if existing["state"] != "draft":
+                raise RuntimeError("Existing Odoo quote is no longer a draft")
+            if int(existing["partner_id"][0]) != partner_id:
+                raise RuntimeError("Existing Odoo quote belongs to another customer")
+            return existing
+
+        values: dict[str, Any] = {
+            "partner_id": partner_id,
+            "origin": origin,
+            "client_order_ref": reference,
+            "x_studio_no_presupuesto_preweb": prefweb_number,
+            "order_line": [[0, 0, line] for line in lines],
+        }
+        if payment_term:
+            values["note"] = (
+                f"<p>Condiciones de pago de PrefWeb: {escape(payment_term)}</p>"
+            )
+
+        result = self._request(
+            model="sale.order",
+            method="create",
+            payload={"vals_list": values},
+            timeout=120,
+        )
+        if isinstance(result, list):
+            if len(result) != 1:
+                raise RuntimeError("Unexpected Odoo quote creation response")
+            quote_id = int(result[0])
+        else:
+            quote_id = int(result)
+
+        quote = self.find_sale_quote_by_origin(origin=origin)
+        if quote is None or int(quote["id"]) != quote_id:
+            raise RuntimeError("Created Odoo quote could not be read back")
+        return quote
+
+    def fetch_sale_quote_pdf(self, *, quote_id: int) -> bytes:
+        """Download Odoo's own quotation report using its scoped portal token."""
+        portal_path = self._request(
+            model="sale.order",
+            method="get_portal_url",
+            payload={"ids": [quote_id]},
+        )
+        if not isinstance(portal_path, str) or not portal_path:
+            raise RuntimeError("Odoo did not return a quotation portal URL")
+
+        url = urljoin(f"{self._base_url}/", portal_path)
+        base = urlsplit(self._base_url)
+        target = urlsplit(url)
+        if (target.scheme, target.netloc) != (base.scheme, base.netloc):
+            raise RuntimeError("Odoo quotation portal URL has an unexpected host")
+
+        response = requests.get(
+            url,
+            params={"report_type": "pdf", "download": "true"},
+            headers={"Odoo-Link-Preview": "True"},
+            timeout=90,
+            allow_redirects=False,
+        )
+        if (
+            response.status_code != 200
+            or "application/pdf" not in response.headers.get("Content-Type", "")
+            or not response.content.startswith(b"%PDF-")
+        ):
+            raise RuntimeError(
+                f"Odoo quotation PDF unavailable (HTTP {response.status_code})"
+            )
+        return response.content
 
     def create_attachment(
         self,
@@ -223,6 +423,7 @@ class OdooClient:
         partner_name: str,
         attachment_ids: list[int],
         has_manual_attachments: bool,
+        has_odoo_quote: bool = False,
     ) -> int:
         first_name = (
             partner_name.strip().split()[0] if partner_name.strip() else "cliente"
@@ -234,6 +435,9 @@ class OdooClient:
             additional_line = (
                 "<li>Documentación adicional " "incluida en la propuesta.</li>"
             )
+
+        if has_odoo_quote:
+            additional_line += "<li>El presupuesto detallado.</li>"
 
         body_html = f"""
 <p>Hola {first_name},</p>

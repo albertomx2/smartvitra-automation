@@ -21,7 +21,8 @@ flowchart LR
     JOB --> VERTEX["Vertex AI · imagen"]
     JOB --> ELEVEN["ElevenLabs · solo slides 1, 2, 3 y 7"]
     JOB --> TOOLS["LibreOffice + Poppler + FFmpeg"]
-    JOB --> ODOO["Odoo · entrega comercial"]
+    API -->|"contacto y presupuesto borrador al generar"| ODOO["Odoo · Ventas"]
+    API -->|"correo al enviar"| ODOO
 
     SRC["Mac · repositorio local"] -->|"git push develop"| GH["GitHub"]
     SRC -->|"gcloud builds submit"| AR["Artifact Registry<br/>smartvitra/app:TAG"]
@@ -59,12 +60,12 @@ flowchart TD
 1. El usuario inicia sesión mediante Firebase y busca/importa un presupuesto de PrefWeb.
 2. `PrefWebService` obtiene el HTML detallado, la ficha actual del cliente y el resumen económico autoritativo. Reconoce tanto el descuento comercial (`Subtotal_Kind=6`) como el descuento de las líneas de ventana; el subtotal y total finales proceden del resumen de PrefWeb.
 3. El usuario completa el caso: necesidades, notas, fotos y selección de material visual.
-4. La web crea un `GenerationJob` en PostgreSQL. `GenerationLauncher` ejecuta `smartvitra-generation` con el UUID del job.
+4. Al generar, la web crea un `GenerationJob`, busca o crea el contacto en Odoo y prepara un presupuesto borrador con todas las partidas de PrefWeb, cantidades, descuentos e impuestos. Descarga el PDF oficial de Odoo por el acceso de portal y lo guarda como artefacto si está disponible. Solo entonces `GenerationLauncher` ejecuta `smartvitra-generation` con el UUID del job.
 5. El Job congela un snapshot, construye el contexto y genera la presentación.
 6. Gemini redacta únicamente las slides variables 1, 2 y 3. La slide 7 se construye de forma determinista con valor, precio, descuento y pago, sin leer códigos técnicos. Las slides 4, 5, 6, 8 y 9 usan texto y MP3 versionados en el repositorio.
 7. ElevenLabs sintetiza solo los cuatro fragmentos variables. Cada fragmento recibe 0,65 segundos de silencio final antes de calcular la duración de su slide.
 8. LibreOffice convierte la presentación a PDF, Poppler crea las imágenes y FFmpeg monta vídeo y narración sin adelantar el cambio de slide.
-9. Se guardan presentación, guion, narración y vídeo como artefactos. La API permite descargarlos y registrar su entrega.
+9. Se guardan presentación, guion, narración y vídeo como artefactos. Al pulsar «Enviar al cliente», la API reutiliza el contacto Odoo asociado al trabajo y envía la presentación, el vídeo y, si está disponible, el PDF del presupuesto junto a los adjuntos manuales; no crea un contacto nuevo. La pantalla principal deriva el estado visible del último trabajo y su entrega.
 
 ## Trabajos similares
 

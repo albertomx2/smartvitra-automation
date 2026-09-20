@@ -32,6 +32,7 @@ from backend.generation.delivery import (
 from backend.generation.delivery_repository import (
     GenerationDeliveryRepository,
 )
+from backend.generation.odoo_preparation import OdooQuotationPreparationService
 from backend.generation.repository import (
     GenerationJobRepository,
 )
@@ -131,28 +132,39 @@ def create_generation_job(
         job = service.create_job(
             case_id=case_id,
         )
-
-        GenerationLauncher().launch(
-            job_id=job.id,
-        )
-
     except GenerationCaseNotFoundError as exc:
         raise HTTPException(
             status_code=404,
             detail=str(exc),
         ) from exc
 
+    try:
+        OdooQuotationPreparationService(db).prepare(job=job)
     except Exception as exc:
-        if "job" in locals():
-            service.mark_failed(
-                job,
-                error=(
-                    "Could not launch "
-                    "generation execution: "
-                    f"{type(exc).__name__}: "
-                    f"{exc}"
-                ),
-            )
+        service.mark_failed(
+            job,
+            error=f"Could not prepare Odoo quotation: {type(exc).__name__}: {exc}",
+        )
+        raise HTTPException(
+            status_code=502,
+            detail=f"No se pudo preparar el presupuesto de Odoo: {exc}",
+        ) from exc
+
+    try:
+        GenerationLauncher().launch(
+            job_id=job.id,
+        )
+
+    except Exception as exc:
+        service.mark_failed(
+            job,
+            error=(
+                "Could not launch "
+                "generation execution: "
+                f"{type(exc).__name__}: "
+                f"{exc}"
+            ),
+        )
 
         raise HTTPException(
             status_code=503,

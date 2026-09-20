@@ -31,6 +31,11 @@ export interface PrefWebProjectSummary {
 
   has_order: boolean
   has_factory_version: boolean
+  proposal_status:
+    | "not_started"
+    | "draft_in_progress"
+    | "generated"
+    | "sent"
 }
 
 export interface WorkspacePhoto {
@@ -181,6 +186,7 @@ export interface GenerationJob {
   latest_delivery: GenerationDelivery | null
 
   error_message: string | null
+  odoo_sale_order_name: string | null
 
   created_at: string
   started_at: string | null
