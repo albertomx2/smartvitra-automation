@@ -8,7 +8,7 @@ from backend.integrations.elevenlabs.client import (
     ElevenLabsClient,
 )
 
-VOICE_ID = "SIKGLxQDD9IQ2ip3wCI1"
+VOICE_ID = "1zpTsJFJ76SRgYK2444n"
 
 TEXT = "Hola, esta es una prueba breve " "de la voz de SmartVitra."
 
