@@ -3,6 +3,8 @@ import {
   useRef,
   useState,
 } from "react"
+import type { ReactNode } from "react"
+import { createPortal } from "react-dom"
 import { downloadAuthenticatedFile } from "../api/client"
 
 import {
@@ -12,7 +14,9 @@ import {
   getLatestGenerationJob,
   sendGenerationJob,
   uploadGenerationArtifact,
+  ExistingOdooQuoteError,
 } from "../api/client"
+import type { ExistingOdooQuote } from "../api/client"
 
 import type {
   GenerationJob,
@@ -246,6 +250,9 @@ export default function GenerationPanel({
   const [error, setError] =
     useState<string | null>(null)
 
+  const [existingQuote, setExistingQuote] =
+    useState<ExistingOdooQuote | null>(null)
+
 
   useEffect(() => {
     let cancelled = false
@@ -287,7 +294,8 @@ export default function GenerationPanel({
     caseId,
   ])
 
-  async function generate() {
+  async function generate(overwriteOdooQuoteId?: number) {
+    if (starting) return
     try {
       setStarting(true)
       setReviewing(false)
@@ -296,10 +304,17 @@ export default function GenerationPanel({
       const created =
         await createGenerationJob(
           caseId,
+          overwriteOdooQuoteId,
         )
 
       setJob(created)
+      setExistingQuote(null)
     } catch (err) {
+      if (err instanceof ExistingOdooQuoteError) {
+        setExistingQuote(err.quote)
+        return
+      }
+      setExistingQuote(null)
       setError(
         err instanceof Error
           ? err.message
@@ -308,6 +323,71 @@ export default function GenerationPanel({
     } finally {
       setStarting(false)
     }
+  }
+
+  function withConfirmation(content: ReactNode) {
+    return (
+      <>
+        {content}
+        {existingQuote && createPortal(
+          <div className="generation-confirm-backdrop">
+            <div
+              className="generation-confirm-dialog"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="generation-confirm-title"
+            >
+              <h2 id="generation-confirm-title">
+                Ya existe un presupuesto de venta en Odoo
+              </h2>
+              <p>
+                El documento PrefWeb ya tiene el presupuesto
+                <strong> {existingQuote.quote_name}</strong>.
+                {existingQuote.quote_count > 1 && (
+                  <>
+                    {" "}Se han encontrado {existingQuote.quote_count}
+                    {" "}documentos relacionados.
+                    {existingQuote.can_overwrite && (
+                      <> Solo se actualizará el borrador más reciente;</>
+                    )}
+                    {" "}Los demás no se borrarán.
+                  </>
+                )}
+              </p>
+              {!existingQuote.can_overwrite && (
+                <p>
+                  Este documento no es un borrador creado por SmartVitra.
+                  Por seguridad, revísalo en Odoo antes de continuar.
+                </p>
+              )}
+              <div className="generation-confirm-actions">
+                <button
+                  className="secondary-button"
+                  disabled={starting}
+                  onClick={() => setExistingQuote(null)}
+                >
+                  Cancelar regeneración
+                </button>
+                {existingQuote.can_overwrite && (
+                  <button
+                    className="generate-button"
+                    disabled={starting}
+                    onClick={() =>
+                      void generate(existingQuote.quote_id)
+                    }
+                  >
+                    {starting
+                      ? "Actualizando..."
+                      : "Sobreescribir con la nueva información"}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+      </>
+    )
   }
 
 
@@ -464,7 +544,7 @@ export default function GenerationPanel({
   ])
 
   if (restoring) {
-    return (
+    return withConfirmation(
       <section className="generation-panel">
         <div>
           <strong>
@@ -481,7 +561,7 @@ export default function GenerationPanel({
   }
 
   if (!job) {
-    return (
+    return withConfirmation(
       <section className="generation-panel">
         <div>
           <strong>
@@ -517,7 +597,7 @@ export default function GenerationPanel({
   }
 
   if (job.status === "failed") {
-    return (
+    return withConfirmation(
       <section className="generation-panel generation-failed">
         <div>
           <strong>
@@ -544,12 +624,14 @@ export default function GenerationPanel({
 
         <button
           className="generate-button"
+          disabled={starting}
           onClick={() =>
             void generate()
           }
         >
-          Volver a intentar
+          {starting ? "Iniciando..." : "Volver a intentar"}
         </button>
+        {error && <div className="generation-error">{error}</div>}
       </section>
     )
   }
@@ -559,7 +641,7 @@ export default function GenerationPanel({
       buildAttachments(job)
 
     if (reviewing) {
-      return (
+      return withConfirmation(
         <section className="generation-review-panel">
           <div className="generation-review-header">
             <div>
@@ -730,18 +812,20 @@ export default function GenerationPanel({
 
             <button
               className="secondary-button"
+              disabled={starting}
               onClick={() =>
                 void generate()
               }
             >
-              Regenerar
+              {starting ? "Iniciando..." : "Regenerar"}
             </button>
           </div>
+          {error && <div className="generation-error">{error}</div>}
         </section>
       )
     }
 
-    return (
+    return withConfirmation(
       <section className="generation-panel generation-completed">
         <div>
           <strong>
@@ -770,13 +854,15 @@ export default function GenerationPanel({
 
           <button
             className="secondary-button"
+            disabled={starting}
             onClick={() =>
               void generate()
             }
           >
-            Regenerar
+            {starting ? "Iniciando..." : "Regenerar"}
           </button>
         </div>
+        {error && <div className="generation-error">{error}</div>}
       </section>
     )
   }
@@ -784,7 +870,7 @@ export default function GenerationPanel({
   const currentIndex =
     stepIndex(job.current_step)
 
-  return (
+  return withConfirmation(
     <section className="generation-progress-panel">
       <div className="generation-progress-header">
         <div>

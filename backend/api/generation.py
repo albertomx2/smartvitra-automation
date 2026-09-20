@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Annotated
 
@@ -13,15 +14,18 @@ from fastapi import (
     status,
 )
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from backend.cases.repository import CaseRepository
 from backend.cloud.generation_launcher import (
     GenerationLauncher,
 )
 from backend.db.models.generation import (
     GenerationArtifact,
 )
-from backend.db.session import get_db
+from backend.db.session import engine, get_db
 from backend.generation.artifact_repository import (
     GenerationArtifactRepository,
 )
@@ -46,6 +50,7 @@ from backend.generation.service import (
     GenerationJobNotFoundError,
     GenerationJobService,
 )
+from backend.integrations.odoo import OdooClient
 from backend.storage.generated import (
     GeneratedFileStorage,
 )
@@ -58,6 +63,31 @@ DbSession = Annotated[
     Session,
     Depends(get_db),
 ]
+
+
+class GenerationStartRequest(BaseModel):
+    overwrite_odoo_quote_id: int | None = None
+
+
+@contextmanager
+def _case_generation_lock(case_id: uuid.UUID):
+    """Serialize starts for one case across Cloud Run instances."""
+    key = int.from_bytes(case_id.bytes[:8], byteorder="big", signed=True)
+    with engine.connect() as connection:
+        acquired = connection.scalar(
+            text("SELECT pg_try_advisory_lock(:key)"), {"key": key}
+        )
+        connection.commit()
+        if not acquired:
+            raise HTTPException(
+                status_code=423,
+                detail="Ya se está iniciando una generación de este presupuesto.",
+            )
+        try:
+            yield
+        finally:
+            connection.execute(text("SELECT pg_advisory_unlock(:key)"), {"key": key})
+            connection.commit()
 
 
 def _to_read(
@@ -125,53 +155,92 @@ def _to_read(
 def create_generation_job(
     case_id: uuid.UUID,
     db: DbSession,
+    request: GenerationStartRequest | None = None,
 ) -> GenerationJobRead:
-    service = GenerationJobService(db)
+    with _case_generation_lock(case_id):
+        case = CaseRepository(db).get(case_id=case_id)
+        if case is None:
+            raise HTTPException(status_code=404, detail="Caso no encontrado")
 
-    try:
-        job = service.create_job(
-            case_id=case_id,
-        )
-    except GenerationCaseNotFoundError as exc:
-        raise HTTPException(
-            status_code=404,
-            detail=str(exc),
-        ) from exc
+        latest = GenerationJobRepository(db).get_latest_for_case(case_id=case_id)
+        if latest is not None and latest.status in {"queued", "running"}:
+            raise HTTPException(
+                status_code=423,
+                detail="Ya hay una propuesta en curso para este presupuesto.",
+            )
 
-    try:
-        OdooQuotationPreparationService(db).prepare(job=job)
-    except Exception as exc:
-        service.mark_failed(
-            job,
-            error=f"Could not prepare Odoo quotation: {type(exc).__name__}: {exc}",
-        )
-        raise HTTPException(
-            status_code=502,
-            detail=f"No se pudo preparar el presupuesto de Odoo: {exc}",
-        ) from exc
+        try:
+            quotes = OdooClient().find_sale_quotes_by_prefweb_number(
+                prefweb_number=case.alias_number
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=502,
+                detail="No se pudo comprobar si el presupuesto existe en Odoo.",
+            ) from exc
 
-    try:
-        GenerationLauncher().launch(
-            job_id=job.id,
-        )
+        overwrite_id = request.overwrite_odoo_quote_id if request else None
+        if quotes:
+            quote = quotes[0]
+            quote_id = int(quote["id"])
+            can_overwrite = quote["state"] == "draft" and str(
+                quote.get("origin") or ""
+            ).startswith("SmartVitra generation ")
+            if overwrite_id != quote_id or not can_overwrite:
+                raise HTTPException(
+                    status_code=409,
+                    detail={
+                        "code": "odoo_quote_exists",
+                        "quote_id": quote_id,
+                        "quote_name": str(quote["name"]),
+                        "quote_count": len(quotes),
+                        "can_overwrite": can_overwrite,
+                    },
+                )
+        elif overwrite_id is not None:
+            raise HTTPException(
+                status_code=409,
+                detail="El presupuesto de Odoo ha cambiado; revisa antes de continuar.",
+            )
 
-    except Exception as exc:
-        service.mark_failed(
-            job,
-            error=(
-                "Could not launch "
-                "generation execution: "
-                f"{type(exc).__name__}: "
-                f"{exc}"
-            ),
-        )
+        service = GenerationJobService(db)
+        try:
+            job = service.create_job(case_id=case_id)
+        except GenerationCaseNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-        raise HTTPException(
-            status_code=503,
-            detail=("Could not launch " "generation execution"),
-        ) from exc
+        try:
+            OdooQuotationPreparationService(db).prepare(
+                job=job, overwrite_odoo_quote_id=overwrite_id
+            )
+        except Exception as exc:
+            service.mark_failed(
+                job,
+                error=f"Could not prepare Odoo quotation: {type(exc).__name__}: {exc}",
+            )
+            raise HTTPException(
+                status_code=502,
+                detail=f"No se pudo preparar el presupuesto de Odoo: {exc}",
+            ) from exc
 
-    return _to_read(job, db)
+        try:
+            GenerationLauncher().launch(job_id=job.id)
+        except Exception as exc:
+            service.mark_failed(
+                job,
+                error=(
+                    "Could not launch "
+                    "generation execution: "
+                    f"{type(exc).__name__}: "
+                    f"{exc}"
+                ),
+            )
+            raise HTTPException(
+                status_code=503,
+                detail="Could not launch generation execution",
+            ) from exc
+
+        return _to_read(job, db)
 
 
 @router.get(

@@ -5,6 +5,23 @@ import type {
   ReferenceSelection,
 } from "./types"
 
+export interface ExistingOdooQuote {
+  code: "odoo_quote_exists"
+  quote_id: number
+  quote_name: string
+  quote_count: number
+  can_overwrite: boolean
+}
+
+export class ExistingOdooQuoteError extends Error {
+  readonly quote: ExistingOdooQuote
+
+  constructor(quote: ExistingOdooQuote) {
+    super(`Ya existe el presupuesto ${quote.quote_name} en Odoo.`)
+    this.quote = quote
+  }
+}
+
 import type {
   CaseWorkspace,
   GenerationDelivery,
@@ -62,11 +79,24 @@ async function request<T>(
       const data =
         await response.json()
 
+      if (
+        response.status === 409 &&
+        data.detail?.code ===
+          "odoo_quote_exists"
+      ) {
+        throw new ExistingOdooQuoteError(data.detail)
+      }
+
       if (data.detail) {
         message =
-          data.detail
+          typeof data.detail === "string"
+            ? data.detail
+            : "No se pudo completar la solicitud"
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof ExistingOdooQuoteError) {
+        throw error
+      }
       // Ignore invalid JSON errors.
     }
 
@@ -232,11 +262,18 @@ export async function deletePhoto(
 
 export async function createGenerationJob(
   caseId: string,
+  overwriteOdooQuoteId?: number,
 ): Promise<GenerationJob> {
   return request<GenerationJob>(
     `/api/cases/${caseId}/generation-jobs`,
     {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        overwrite_odoo_quote_id: overwriteOdooQuoteId ?? null,
+      }),
     },
   )
 }

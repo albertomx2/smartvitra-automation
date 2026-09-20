@@ -26,7 +26,9 @@ class OdooQuotationPreparationService:
     def __init__(self, db: Session) -> None:
         self._db = db
 
-    def prepare(self, *, job: GenerationJob) -> None:
+    def prepare(
+        self, *, job: GenerationJob, overwrite_odoo_quote_id: int | None = None
+    ) -> None:
         case = CaseRepository(self._db).get(case_id=job.case_id)
         if case is None:
             raise LookupError("Project case not found")
@@ -75,14 +77,27 @@ class OdooQuotationPreparationService:
             city=project.customer_city,
         )
         partner_id = int(partner["id"])
-        quote = odoo.create_sale_quote(
-            partner_id=partner_id,
-            origin=f"SmartVitra generation {job.id}",
-            reference=project.reference or project.alias_number,
-            prefweb_number=project.alias_number,
-            payment_term=project.payment_term,
-            lines=lines,
-        )
+        origin = f"SmartVitra generation {job.id}"
+        reference = project.reference or project.alias_number
+        if overwrite_odoo_quote_id is not None:
+            quote = odoo.update_sale_quote(
+                quote_id=overwrite_odoo_quote_id,
+                partner_id=partner_id,
+                origin=origin,
+                reference=reference,
+                prefweb_number=project.alias_number,
+                payment_term=project.payment_term,
+                lines=lines,
+            )
+        else:
+            quote = odoo.create_sale_quote(
+                partner_id=partner_id,
+                origin=origin,
+                reference=reference,
+                prefweb_number=project.alias_number,
+                payment_term=project.payment_term,
+                lines=lines,
+            )
         if abs(
             Decimal(str(quote["amount_total"])) - Decimal(str(project.final_price))
         ) > Decimal("0.05"):

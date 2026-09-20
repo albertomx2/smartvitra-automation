@@ -300,6 +300,88 @@ class OdooClient:
             raise RuntimeError(f"Multiple Odoo quotes found for {origin}")
         return result[0] if result else None
 
+    def find_sale_quotes_by_prefweb_number(
+        self, *, prefweb_number: str
+    ) -> list[dict[str, Any]]:
+        """Find all sale documents for the stable PrefWeb number, not a job UUID."""
+        result = self._request(
+            model="sale.order",
+            method="search_read",
+            payload={
+                "domain": [
+                    "|",
+                    ["x_studio_no_presupuesto_preweb", "=", prefweb_number],
+                    ["client_order_ref", "=", prefweb_number],
+                ],
+                "fields": [
+                    "id",
+                    "name",
+                    "state",
+                    "origin",
+                    "partner_id",
+                    "amount_total",
+                ],
+                "order": "id desc",
+                "limit": 100,
+            },
+        )
+        if not isinstance(result, list):
+            raise TypeError("Unexpected Odoo sale order response")
+        return result
+
+    def update_sale_quote(
+        self,
+        *,
+        quote_id: int,
+        partner_id: int,
+        origin: str,
+        reference: str,
+        prefweb_number: str,
+        payment_term: str | None,
+        lines: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Replace lines on a SmartVitra draft; never modify sent/confirmed sales."""
+        quotes = self.find_sale_quotes_by_prefweb_number(prefweb_number=prefweb_number)
+        existing = next(
+            (quote for quote in quotes if int(quote["id"]) == quote_id), None
+        )
+        if existing is None:
+            raise RuntimeError("Odoo quotation changed; review it before regenerating")
+        if existing["state"] != "draft":
+            raise RuntimeError("Only a draft Odoo quotation can be overwritten")
+        if not str(existing.get("origin") or "").startswith("SmartVitra generation "):
+            raise RuntimeError(
+                "A manually managed Odoo quotation cannot be overwritten"
+            )
+        if int(existing["partner_id"][0]) != partner_id:
+            raise RuntimeError("Odoo quotation belongs to another customer")
+
+        result = self._request(
+            model="sale.order",
+            method="write",
+            payload={
+                "ids": [quote_id],
+                "vals": {
+                    "origin": origin,
+                    "client_order_ref": reference,
+                    "x_studio_no_presupuesto_preweb": prefweb_number,
+                    "note": (
+                        f"<p>Condiciones de pago de PrefWeb: {escape(payment_term)}</p>"
+                        if payment_term
+                        else ""
+                    ),
+                    "order_line": [[5, 0, 0], *[[0, 0, line] for line in lines]],
+                },
+            },
+            timeout=120,
+        )
+        if result is not True:
+            raise RuntimeError("Odoo did not confirm quotation update")
+        quote = self.find_sale_quote_by_origin(origin=origin)
+        if quote is None or int(quote["id"]) != quote_id:
+            raise RuntimeError("Updated Odoo quotation could not be read back")
+        return quote
+
     def create_sale_quote(
         self,
         *,

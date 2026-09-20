@@ -1,7 +1,9 @@
 import uuid
+from contextlib import contextmanager
 from types import SimpleNamespace
 
 import pytest
+from fastapi import HTTPException
 
 from backend.api import generation as generation_api
 from backend.cases.proposal_status import classify_proposal_status
@@ -180,6 +182,102 @@ def test_odoo_reuses_one_technical_product(monkeypatch: pytest.MonkeyPatch) -> N
     assert calls == ["search_read"]
 
 
+def test_odoo_finds_existing_quotes_by_prefweb_number(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = OdooClient(base_url="https://odoo.example", api_key="test")
+    requests: list[dict] = []
+
+    def fake_request(*, model: str, method: str, payload: dict, timeout=30):
+        requests.append(payload)
+        return [{"id": 27, "name": "S00227", "state": "draft"}]
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    assert (
+        client.find_sale_quotes_by_prefweb_number(prefweb_number="2026/191")[0]["id"]
+        == 27
+    )
+    assert requests[0]["domain"][1] == [
+        "x_studio_no_presupuesto_preweb",
+        "=",
+        "2026/191",
+    ]
+    assert requests[0]["order"] == "id desc"
+
+
+def test_odoo_overwrite_replaces_lines_without_creating_sale_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = OdooClient(base_url="https://odoo.example", api_key="test")
+    calls: list[tuple[str, dict]] = []
+    existing = {
+        "id": 27,
+        "name": "S00227",
+        "state": "draft",
+        "origin": "SmartVitra generation old-job",
+        "partner_id": [7, "Cliente"],
+    }
+    monkeypatch.setattr(
+        client,
+        "find_sale_quotes_by_prefweb_number",
+        lambda *, prefweb_number: [existing],
+    )
+    monkeypatch.setattr(
+        client,
+        "find_sale_quote_by_origin",
+        lambda *, origin: {**existing, "amount_total": 1517.01},
+    )
+
+    def fake_request(*, model: str, method: str, payload: dict, timeout=30):
+        calls.append((method, payload))
+        return True
+
+    monkeypatch.setattr(client, "_request", fake_request)
+    result = client.update_sale_quote(
+        quote_id=27,
+        partner_id=7,
+        origin="SmartVitra generation new-job",
+        reference="2026/191",
+        prefweb_number="2026/191",
+        payment_term=None,
+        lines=[{"name": "Ventana nueva"}],
+    )
+    assert result["id"] == 27
+    assert [method for method, _ in calls] == ["write"]
+    assert calls[0][1]["vals"]["order_line"] == [
+        [5, 0, 0],
+        [0, 0, {"name": "Ventana nueva"}],
+    ]
+
+
+def test_odoo_refuses_overwrite_of_confirmed_sale(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = OdooClient(base_url="https://odoo.example", api_key="test")
+    monkeypatch.setattr(
+        client,
+        "find_sale_quotes_by_prefweb_number",
+        lambda *, prefweb_number: [
+            {
+                "id": 27,
+                "state": "sale",
+                "origin": "SmartVitra generation old-job",
+                "partner_id": [7, "Cliente"],
+            }
+        ],
+    )
+    with pytest.raises(RuntimeError, match="Only a draft"):
+        client.update_sale_quote(
+            quote_id=27,
+            partner_id=7,
+            origin="SmartVitra generation new-job",
+            reference="2026/191",
+            prefweb_number="2026/191",
+            payment_term=None,
+            lines=[],
+        )
+
+
 def test_odoo_quote_pdf_uses_scoped_portal_url(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -243,7 +341,7 @@ def test_generate_prepares_odoo_before_launch(monkeypatch: pytest.MonkeyPatch) -
         def __init__(self, db: object) -> None:
             pass
 
-        def prepare(self, *, job: object) -> None:
+        def prepare(self, *, job: object, overwrite_odoo_quote_id=None) -> None:
             events.append("prepare_odoo")
 
     class FakeLauncher:
@@ -258,6 +356,140 @@ def test_generate_prepares_odoo_before_launch(monkeypatch: pytest.MonkeyPatch) -
     )
     monkeypatch.setattr(generation_api, "GenerationLauncher", FakeLauncher)
     monkeypatch.setattr(generation_api, "_to_read", lambda job, db: job)
+    monkeypatch.setattr(
+        generation_api,
+        "CaseRepository",
+        lambda db: SimpleNamespace(
+            get=lambda *, case_id: SimpleNamespace(alias_number="2026/191")
+        ),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "GenerationJobRepository",
+        lambda db: SimpleNamespace(get_latest_for_case=lambda *, case_id: None),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "OdooClient",
+        lambda: SimpleNamespace(find_sale_quotes_by_prefweb_number=lambda **kw: []),
+    )
+
+    @contextmanager
+    def fake_lock(case_id: uuid.UUID):
+        yield
+
+    monkeypatch.setattr(generation_api, "_case_generation_lock", fake_lock)
 
     assert generation_api.create_generation_job(uuid.uuid4(), object()) is job
     assert events == ["create_job", "prepare_odoo", "launch_generation"]
+
+
+def test_existing_odoo_quote_requires_explicit_confirmation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    quote = {
+        "id": 27,
+        "name": "S00227",
+        "state": "draft",
+        "origin": "SmartVitra generation old-job",
+    }
+    monkeypatch.setattr(
+        generation_api,
+        "CaseRepository",
+        lambda db: SimpleNamespace(
+            get=lambda *, case_id: SimpleNamespace(alias_number="2026/191")
+        ),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "GenerationJobRepository",
+        lambda db: SimpleNamespace(get_latest_for_case=lambda *, case_id: None),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "OdooClient",
+        lambda: SimpleNamespace(
+            find_sale_quotes_by_prefweb_number=lambda **kw: [quote]
+        ),
+    )
+
+    @contextmanager
+    def fake_lock(case_id: uuid.UUID):
+        yield
+
+    monkeypatch.setattr(generation_api, "_case_generation_lock", fake_lock)
+    monkeypatch.setattr(
+        generation_api,
+        "GenerationJobService",
+        lambda db: pytest.fail("A job must not be created before confirmation"),
+    )
+    with pytest.raises(HTTPException) as exc:
+        generation_api.create_generation_job(uuid.uuid4(), object())
+    assert exc.value.status_code == 409
+    assert exc.value.detail["quote_name"] == "S00227"
+    assert exc.value.detail["can_overwrite"] is True
+
+
+def test_confirmed_regeneration_reuses_the_existing_quote(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    quote = {
+        "id": 27,
+        "name": "S00227",
+        "state": "draft",
+        "origin": "SmartVitra generation old-job",
+    }
+    job = SimpleNamespace(id=uuid.uuid4())
+    prepared: list[int | None] = []
+    monkeypatch.setattr(
+        generation_api,
+        "CaseRepository",
+        lambda db: SimpleNamespace(
+            get=lambda *, case_id: SimpleNamespace(alias_number="2026/191")
+        ),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "GenerationJobRepository",
+        lambda db: SimpleNamespace(get_latest_for_case=lambda *, case_id: None),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "OdooClient",
+        lambda: SimpleNamespace(
+            find_sale_quotes_by_prefweb_number=lambda **kw: [quote]
+        ),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "GenerationJobService",
+        lambda db: SimpleNamespace(create_job=lambda *, case_id: job),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "OdooQuotationPreparationService",
+        lambda db: SimpleNamespace(
+            prepare=lambda *, job, overwrite_odoo_quote_id: prepared.append(
+                overwrite_odoo_quote_id
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        generation_api,
+        "GenerationLauncher",
+        lambda: SimpleNamespace(launch=lambda *, job_id: None),
+    )
+    monkeypatch.setattr(generation_api, "_to_read", lambda job, db: job)
+
+    @contextmanager
+    def fake_lock(case_id: uuid.UUID):
+        yield
+
+    monkeypatch.setattr(generation_api, "_case_generation_lock", fake_lock)
+    result = generation_api.create_generation_job(
+        uuid.uuid4(),
+        object(),
+        generation_api.GenerationStartRequest(overwrite_odoo_quote_id=27),
+    )
+    assert result is job
+    assert prepared == [27]
