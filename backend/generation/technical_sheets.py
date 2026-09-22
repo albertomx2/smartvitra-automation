@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from backend.generation.snapshot import CaseGenerationSnapshot
-from backend.reference_photos.matcher import ReferencePhotoMatcher
 
 
 @dataclass(frozen=True)
@@ -72,24 +71,7 @@ class TechnicalSheetSelector:
         if "persian" in normalized:
             selected.append(self.THERMOACUSTIC)
 
-        opening_systems = {
-            ReferencePhotoMatcher._infer_opening_system(
-                " ".join(
-                    filter(
-                        None,
-                        (
-                            window.nomenclature,
-                            window.reference,
-                            window.description,
-                            window.room,
-                        ),
-                    )
-                )
-            )
-            for window in snapshot.windows
-        }
-
-        if "tilt_turn" in opening_systems:
+        if "oscilobat" in normalized:
             selected.extend(
                 (
                     self.MICROVENTILATION,
@@ -97,7 +79,7 @@ class TechnicalSheetSelector:
                 )
             )
 
-        if "sliding" in opening_systems:
+        if "corredera" in normalized or "islide" in normalized:
             selected.append(self.ISLIDE)
 
         for sheet in selected:

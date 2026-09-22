@@ -514,6 +514,30 @@ export default function GenerationPanel({
     }
   }
 
+  async function openReview() {
+    if (!job) {
+      return
+    }
+
+    try {
+      setError(null)
+
+      const current =
+        await getGenerationJob(
+          job.id,
+        )
+
+      setJob(current)
+      setReviewing(true)
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudieron actualizar los archivos de la propuesta",
+      )
+    }
+  }
+
 
   useEffect(() => {
     if (
@@ -856,7 +880,7 @@ export default function GenerationPanel({
           <button
             className="review-button"
             onClick={() =>
-              setReviewing(true)
+              void openReview()
             }
           >
             Revisar propuesta

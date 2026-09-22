@@ -77,8 +77,6 @@ def test_selects_thermoacustic_when_prefweb_items_include_shutter() -> None:
 
     assert filenames == [
         "Ficha tecnica Cajon SUMUM Thermoacustic.pdf",
-        "Ficha tecnica Microventilacion.pdf",
-        "Ficha tecnica UNIK.pdf",
     ]
 
 
@@ -93,3 +91,23 @@ def test_each_sheet_is_added_only_once_for_repeated_window_types() -> None:
     selected = TechnicalSheetSelector().select(snapshot)
 
     assert [sheet.filename for sheet in selected] == ["Ficha tecnica iSlide.pdf"]
+
+
+def test_real_prefweb_case_selects_only_islide_for_explicit_sliding() -> None:
+    snapshot = _snapshot(
+        windows=[
+            _window("Corredera paralela 1 Hoja + 1 Fijo", position=1),
+            _window("Ventana 2 hojas + 1 hoja", position=2),
+            _window("Corredera Islide 2 hojas", position=3),
+        ]
+    )
+
+    selected = TechnicalSheetSelector().select(snapshot)
+
+    assert [sheet.filename for sheet in selected] == ["Ficha tecnica iSlide.pdf"]
+
+
+def test_generic_window_does_not_imply_tilt_turn_technical_sheets() -> None:
+    snapshot = _snapshot(windows=[_window("Ventana 2 hojas")])
+
+    assert TechnicalSheetSelector().select(snapshot) == []
