@@ -10,7 +10,7 @@ from backend.generation.video.font_normalizer import (
 
 
 class NarratedPresentationVideoRenderer:
-    SLIDE_COUNT = 9
+    SLIDE_COUNT = 10
     SLIDE_END_PADDING_SECONDS = 0.65
 
     def render(
@@ -23,7 +23,9 @@ class NarratedPresentationVideoRenderer:
         work_dir: Path,
     ) -> Path:
         if len(slide_audio_paths) != self.SLIDE_COUNT:
-            raise ValueError("Exactly 9 slide audio files " "are required")
+            raise ValueError(
+                f"Exactly {self.SLIDE_COUNT} slide audio files are required"
+            )
 
         for binary in (
             "libreoffice",

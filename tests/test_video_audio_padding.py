@@ -1,8 +1,30 @@
 from pathlib import Path
 
+import pytest
+
 from backend.generation.video.renderer import (
     NarratedPresentationVideoRenderer,
 )
+
+
+def test_video_renderer_requires_audio_for_all_ten_slides(
+    tmp_path: Path,
+) -> None:
+    renderer = NarratedPresentationVideoRenderer()
+
+    with pytest.raises(
+        ValueError,
+        match="Exactly 10 slide audio files are required",
+    ):
+        renderer.render(
+            presentation_path=tmp_path / "presentation.pptx",
+            slide_audio_paths=[
+                tmp_path / f"slide_{index:02d}.mp3" for index in range(1, 10)
+            ],
+            output_video_path=tmp_path / "video.mp4",
+            output_audio_path=tmp_path / "audio.mp3",
+            work_dir=tmp_path,
+        )
 
 
 def test_slide_audio_gets_a_safe_silent_tail(

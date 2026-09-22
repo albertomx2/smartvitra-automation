@@ -88,10 +88,10 @@ def render_presentation(
         key=lambda path: int(path.stem.split("-")[-1]),
     )
 
-    if len(result) < 9:
-        raise RuntimeError(f"Expected 9 slides, found {len(result)}")
+    if len(result) < 10:
+        raise RuntimeError(f"Expected 10 slides, found {len(result)}")
 
-    return result[:9]
+    return result[:10]
 
 
 def build_silent_video(
