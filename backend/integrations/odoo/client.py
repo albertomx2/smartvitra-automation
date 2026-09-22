@@ -506,6 +506,7 @@ class OdooClient:
         attachment_ids: list[int],
         has_manual_attachments: bool,
         has_odoo_quote: bool = False,
+        has_technical_sheets: bool = False,
     ) -> int:
         first_name = (
             partner_name.strip().split()[0] if partner_name.strip() else "cliente"
@@ -520,6 +521,9 @@ class OdooClient:
 
         if has_odoo_quote:
             additional_line += "<li>El presupuesto detallado.</li>"
+
+        if has_technical_sheets:
+            additional_line += "<li>Las fichas técnicas correspondientes.</li>"
 
         body_html = f"""
 <p>Hola {first_name},</p>

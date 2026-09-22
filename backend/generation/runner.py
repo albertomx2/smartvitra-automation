@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import traceback
 import uuid
 
@@ -37,6 +38,9 @@ from backend.generation.service import (
 )
 from backend.generation.snapshot_builder import (
     GenerationSnapshotBuilder,
+)
+from backend.generation.technical_sheets import (
+    TechnicalSheetSelector,
 )
 from backend.generation.video import (
     NarratedPresentationVideoRenderer,
@@ -407,6 +411,30 @@ class GenerationJobRunner:
                     size_bytes=(video_path.stat().st_size),
                 )
             )
+
+            for sheet in TechnicalSheetSelector().select(snapshot):
+                generated_sheet_path = work_dir / sheet.filename
+
+                shutil.copyfile(
+                    sheet.path,
+                    generated_sheet_path,
+                )
+
+                sheet_storage_key = storage.persist(
+                    path=generated_sheet_path,
+                    content_type="application/pdf",
+                )
+
+                artifacts.add(
+                    GenerationArtifact(
+                        generation_job_id=job.id,
+                        kind="technical_sheet",
+                        filename=sheet.filename,
+                        storage_key=sheet_storage_key,
+                        content_type="application/pdf",
+                        size_bytes=generated_sheet_path.stat().st_size,
+                    )
+                )
 
             self._service.mark_completed(
                 job,

@@ -108,7 +108,9 @@ function buildAttachments(
             artifact.kind ===
               "attachment" ||
             artifact.kind ===
-              "odoo_quote"
+              "odoo_quote" ||
+            artifact.kind ===
+              "technical_sheet"
           ),
       )
       .map((artifact) => {
@@ -162,6 +164,14 @@ function buildAttachments(
             "Documento adicional"
 
           deletable = true
+        }
+
+        if (
+          artifact.kind ===
+          "technical_sheet"
+        ) {
+          kind = "pdf"
+          label = "Ficha técnica incluida"
         }
 
         return {

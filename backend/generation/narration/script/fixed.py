@@ -7,7 +7,7 @@ from backend.generation.narration.script.models import (
     NarrationSlide,
 )
 
-FIXED_NARRATION_VERSION: Final = "v2"
+FIXED_NARRATION_VERSION: Final = "v3"
 FIXED_NARRATION_VOICE_ID: Final = "1zpTsJFJ76SRgYK2444n"
 
 FIXED_NARRATION_TEXT: Final[dict[int, str]] = {
@@ -30,12 +30,19 @@ FIXED_NARRATION_TEXT: Final[dict[int, str]] = {
         "cada cliente quede realmente satisfecho."
     ),
     8: (
+        "Y además, si confirmáis el proyecto en los próximos quince días, "
+        "podréis elegir una mejora adicional para una de las ventanas "
+        "incluidas: motorización de persiana, mosquitera enrollable o "
+        "plisada, forro de peana con chapa de aluminio u otra mejora a "
+        "consultar. La opción elegida estará sujeta a compatibilidad técnica."
+    ),
+    9: (
         "Queremos presentarte también una alternativa de buena calidad y "
         "fiable, con una configuración más contenida. Esta opción permite "
         "ajustar la inversión manteniendo un buen nivel de prestaciones. El "
         "presupuesto mostrado no está calculado con esta alternativa."
     ),
-    9: (
+    10: (
         "Nuestra recomendación es la opción de mayores prestaciones, que es "
         "la utilizada para calcular el presupuesto. Ambas alternativas son "
         "válidas, pero creemos que esta ofrece el mejor equilibrio entre "
@@ -50,8 +57,9 @@ FIXED_OBJECTIVES: Final[dict[int, str]] = {
     4: "risk_reduction",
     5: "visual_evidence",
     6: "social_proof",
-    8: "value_alternative",
-    9: "recommended_solution",
+    8: "early_commitment_incentive",
+    9: "value_alternative",
+    10: "recommended_solution",
 }
 
 

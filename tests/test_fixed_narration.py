@@ -110,7 +110,7 @@ def test_generator_requests_only_variable_slides_and_inserts_fixed_copy() -> Non
     )
 
     assert llm.response_model is VariableNarrationScript
-    assert [slide.slide_number for slide in script.slides] == list(range(1, 10))
+    assert [slide.slide_number for slide in script.slides] == list(range(1, 11))
 
     for slide_number, expected_text in FIXED_NARRATION_TEXT.items():
         assert script.slides[slide_number - 1].narration == expected_text

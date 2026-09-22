@@ -20,7 +20,7 @@ class NarrationScriptValidator:
     MIN_DURATION_SECONDS = 120
     MAX_DURATION_SECONDS = 190
 
-    EXPECTED_SLIDES: ClassVar[list[int]] = list(range(1, 10))
+    EXPECTED_SLIDES: ClassVar[list[int]] = list(range(1, 11))
 
     def validate(
         self,
@@ -30,7 +30,7 @@ class NarrationScriptValidator:
 
         if numbers != self.EXPECTED_SLIDES:
             raise NarrationScriptValidationError(
-                "Narration must contain slides " "1 through 9 in order"
+                "Narration must contain slides " "1 through 10 in order"
             )
 
         actual_words = len(script.full_text.split())

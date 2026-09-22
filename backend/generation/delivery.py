@@ -34,6 +34,7 @@ class ProposalDeliveryService:
         "video",
         "attachment",
         "odoo_quote",
+        "technical_sheet",
     }
 
     def __init__(
@@ -183,6 +184,7 @@ class ProposalDeliveryService:
                     artifact.kind == "attachment" for artifact in artifacts
                 ),
                 has_odoo_quote="odoo_quote" in kinds,
+                has_technical_sheets="technical_sheet" in kinds,
             )
 
             delivery.status = "sent"

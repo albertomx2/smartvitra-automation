@@ -9,6 +9,7 @@ from backend.cases.repository import (
 )
 from backend.generation.snapshot import (
     CaseGenerationSnapshot,
+    GenerationItemSnapshot,
     GenerationPhotoSnapshot,
     GenerationProjectSnapshot,
     GenerationReferencePhotoSnapshot,
@@ -189,5 +190,18 @@ class GenerationSnapshotBuilder:
                 has_discount=(project.has_discount),
             ),
             windows=windows,
+            items=[
+                GenerationItemSnapshot(
+                    id_pos=item.id_pos,
+                    item_id=item.item_id,
+                    nomenclature=item.nomenclature,
+                    reference=item.reference,
+                    description=item.description,
+                    internal_remarks=item.internal_remarks,
+                    item_type=item.item_type,
+                    item_subtype=item.item_subtype,
+                )
+                for item in project.items
+            ],
             reference_photos=reference_photos,
         )

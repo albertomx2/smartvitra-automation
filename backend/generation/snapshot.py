@@ -56,6 +56,19 @@ class GenerationWindowSnapshot(BaseModel):
     )
 
 
+class GenerationItemSnapshot(BaseModel):
+    id_pos: str
+    item_id: str | None = None
+
+    nomenclature: str | None = None
+    reference: str | None = None
+    description: str | None = None
+    internal_remarks: str | None = None
+
+    item_type: str | None = None
+    item_subtype: str | None = None
+
+
 class GenerationProjectSnapshot(BaseModel):
     number: int
     version: int
@@ -100,6 +113,10 @@ class CaseGenerationSnapshot(BaseModel):
     project: GenerationProjectSnapshot
 
     windows: list[GenerationWindowSnapshot]
+
+    items: list[GenerationItemSnapshot] = Field(
+        default_factory=list,
+    )
 
     reference_photos: list[GenerationReferencePhotoSnapshot] = Field(
         default_factory=list,

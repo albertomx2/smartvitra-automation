@@ -19,7 +19,7 @@ al cliente desde la comprensión de sus problemas hasta la
 solución propuesta, la confianza en SmartVitra, la inversión
 y la comparación final entre las dos alternativas disponibles.
 
-La presentación tiene 9 diapositivas.
+La presentación tiene 10 diapositivas.
 
 El discurso completo debe sentirse como UNA conversación.
 Las narraciones de las diferentes slides deben enlazar entre sí.
@@ -261,7 +261,15 @@ No afirmes una diferencia económica exacta respecto
 a la alternativa de buena calidad si no existe ese
 importe en los datos.
 
-SLIDE 8 — ALTERNATIVA DE BUENA CALIDAD
+SLIDE 8 — MEJORA POR CONTRATACIÓN ANTICIPADA
+
+Objetivo:
+explicar de forma clara la mejora adicional que el cliente
+puede elegir si confirma el proyecto en los próximos 15 días.
+
+No presentes la condición como presión ni como falsa escasez.
+
+SLIDE 9 — ALTERNATIVA DE BUENA CALIDAD
 
 Objetivo:
 presentar una alternativa válida que permite reducir
@@ -286,7 +294,7 @@ no está calculado con esta alternativa.
 
 No desacredites esta opción.
 
-SLIDE 9 — OPCIÓN RECOMENDADA
+SLIDE 10 — OPCIÓN RECOMENDADA
 
 Objetivo:
 presentar la alternativa de mayores prestaciones y
@@ -321,7 +329,7 @@ FORMATO DE RESPUESTA
 
 Devuelve exclusivamente la estructura JSON solicitada.
 
-Debe haber exactamente 9 slides.
+Debe haber exactamente 10 slides.
 
 commercial_objective debe ser breve y utilizar uno de estos
 conceptos cuando corresponda:
@@ -333,6 +341,7 @@ risk_reduction
 visual_evidence
 social_proof
 investment
+early_commitment_incentive
 value_alternative
 recommended_solution
 

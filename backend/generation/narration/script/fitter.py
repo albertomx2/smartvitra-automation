@@ -19,7 +19,7 @@ class NarrationScriptFitter:
 
     TARGET_MAX_WORDS = 420
     MIN_WORDS_PER_SLIDE = 20
-    FIXED_SLIDE_NUMBERS = frozenset({4, 5, 6, 8, 9})
+    FIXED_SLIDE_NUMBERS = frozenset({4, 5, 6, 8, 9, 10})
 
     @staticmethod
     def _word_count(

@@ -95,7 +95,7 @@ def test_narration_fitter_never_changes_fixed_slides():
 
     slides = []
 
-    for number in range(1, 10):
+    for number in range(1, 11):
         slides.append(
             fixed.get(number)
             or NarrationSlide(

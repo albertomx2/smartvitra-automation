@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 class NarrationSlide(BaseModel):
     slide_number: int = Field(
         ge=1,
-        le=9,
+        le=10,
     )
 
     commercial_objective: str
@@ -33,8 +33,8 @@ class NarrationScript(BaseModel):
     actual_duration_seconds: float | None = None
 
     slides: list[NarrationSlide] = Field(
-        min_length=9,
-        max_length=9,
+        min_length=10,
+        max_length=10,
     )
 
     @property

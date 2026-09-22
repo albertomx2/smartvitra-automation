@@ -105,7 +105,7 @@ class NarrationScriptGenerator:
         script = NarrationScript(
             estimated_duration_seconds=0,
             word_count=0,
-            slides=[slides_by_number[number] for number in range(1, 10)],
+            slides=[slides_by_number[number] for number in range(1, 11)],
         )
 
         script = NarrationScriptFitter().fit(
