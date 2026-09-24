@@ -7,8 +7,8 @@ from backend.generation.narration.script.models import (
     NarrationSlide,
 )
 
-FIXED_NARRATION_VERSION: Final = "v3"
-FIXED_NARRATION_VOICE_ID: Final = "1zpTsJFJ76SRgYK2444n"
+FIXED_NARRATION_VERSION: Final = "v4"
+FIXED_NARRATION_VOICE_ID: Final = "SIKGLxQDD9IQ2ip3wCI1"
 
 FIXED_NARRATION_TEXT: Final[dict[int, str]] = {
     4: (

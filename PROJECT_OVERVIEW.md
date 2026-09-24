@@ -29,7 +29,7 @@ SmartVitra transforma un presupuesto técnico y la información recogida durante
 ## Narración eficiente
 
 - Variables por cliente: Gemini redacta las slides 1, 2 y 3; la slide 7 se redacta por código con datos económicos exactos. ElevenLabs produce esos cuatro audios.
-- Fijas: slides 4, 5, 6, 8, 9 y 10; texto en `backend/generation/narration/script/fixed.py` y MP3 en `assets/narration/fixed/v3/`. La slide 8 explica la mejora adicional por confirmar el proyecto dentro de los 15 días.
+- Fijas: slides 4, 5, 6, 8, 9 y 10; texto en `backend/generation/narration/script/fixed.py` y MP3 en `assets/narration/fixed/v4/`. La slide 8 explica la mejora adicional por confirmar el proyecto dentro de los 15 días. Todos estos audios usan la voz de Alberto.
 - Los audios fijos solo deben regenerarse si cambia deliberadamente su texto o voz: `PYTHONPATH=. python scripts/generate_fixed_narration_audio.py --force`.
 - Las fichas técnicas se añaden una sola vez según PrefWeb: cajón SUMUM Thermoacustic con persiana, Microventilación y UNIK con oscilobatientes, e iSlide con correderas.
 - Si hay descuento de cabecera o de línea de ventana, el contexto incluye `discount_applied=true` y la slide 7 garantiza el porcentaje, el precio final y la condición de contratación en los próximos 15 días.
