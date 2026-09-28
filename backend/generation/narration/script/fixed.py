@@ -7,16 +7,17 @@ from backend.generation.narration.script.models import (
     NarrationSlide,
 )
 
-FIXED_NARRATION_VERSION: Final = "v4"
+FIXED_NARRATION_VERSION: Final = "v5"
 FIXED_NARRATION_VOICE_ID: Final = "SIKGLxQDD9IQ2ip3wCI1"
 
 FIXED_NARRATION_TEXT: Final[dict[int, str]] = {
     4: (
         "Sabemos que el resultado final depende de una instalación impecable. "
-        "En SmartVitra nos encargamos de todo: protegemos los suelos y los "
-        "muebles cercanos, realizamos una instalación profesional, cuidamos "
-        "los remates de albañilería y dejamos todo limpio. Queremos que el "
-        "trabajo quede perfecto y sin preocupaciones."
+        "En SmartVitra trabajamos con protección y seguridad durante todo el "
+        "proceso, cuidamos cada detalle y dejamos los remates exteriores "
+        "completamente terminados. Al finalizar, dejamos la zona limpia y "
+        "preparada, excepto los remates de pintura y su preparación. Queremos "
+        "que disfrutes de un resultado profesional y sin preocupaciones."
     ),
     5: (
         "Aquí puedes ver algunos de nuestros proyectos ya terminados. Estas "

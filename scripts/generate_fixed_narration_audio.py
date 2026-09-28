@@ -28,6 +28,12 @@ def main() -> None:
         default=FIXED_NARRATION_VOICE_ID,
         help="ElevenLabs voice ID; defaults to the versioned SmartVitra voice.",
     )
+    parser.add_argument(
+        "--slide",
+        type=int,
+        choices=sorted(FIXED_NARRATION_TEXT),
+        help="Generate only one fixed slide instead of the complete fixed set.",
+    )
     args = parser.parse_args()
 
     load_dotenv()
@@ -35,7 +41,11 @@ def main() -> None:
         voice_id=args.voice_id,
     )
 
-    for slide_number, text in FIXED_NARRATION_TEXT.items():
+    fixed_texts = FIXED_NARRATION_TEXT
+    if args.slide is not None:
+        fixed_texts = {args.slide: FIXED_NARRATION_TEXT[args.slide]}
+
+    for slide_number, text in fixed_texts.items():
         output_path = fixed_audio_path(slide_number)
 
         if output_path.exists() and not args.force:

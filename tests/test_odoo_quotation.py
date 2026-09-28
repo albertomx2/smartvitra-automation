@@ -49,13 +49,22 @@ def _project(*, subtotal: float = 1253.73) -> PrefWebProject:
     )
 
 
+def _products_by_title(*, include_discount: bool = False) -> dict[str, tuple[int, int]]:
+    products = {
+        "Corredera 2 hojas Pos. 1 - V1.": (9, 1),
+        "Instalación incluida": (10, 1),
+    }
+    if include_discount:
+        products["Descuento comercial"] = (11, 1)
+    return products
+
+
 def test_sale_quote_mirrors_prefweb_prices_and_included_services() -> None:
     lines = build_sale_order_lines(
         _project(),
         goods_tax_id=1,
         services_tax_id=2,
-        product_id=9,
-        product_uom_id=1,
+        products_by_title=_products_by_title(),
     )
     assert len(lines) == 2
     assert lines[0]["name"] == "Corredera 2 hojas Pos. 1 - V1."
@@ -75,8 +84,7 @@ def test_sale_quote_adds_only_document_level_discount() -> None:
         project,
         goods_tax_id=1,
         services_tax_id=2,
-        product_id=9,
-        product_uom_id=1,
+        products_by_title=_products_by_title(include_discount=True),
     )
     assert len(lines) == 3
     assert lines[-1]["price_unit"] == -100
@@ -89,8 +97,7 @@ def test_sale_quote_rejects_inconsistent_prefweb_totals() -> None:
             _project(subtotal=1000),
             goods_tax_id=1,
             services_tax_id=2,
-            product_id=9,
-            product_uom_id=1,
+            products_by_title={},
         )
 
 
@@ -133,6 +140,8 @@ def test_odoo_quote_creation_is_idempotent(monkeypatch: pytest.MonkeyPatch) -> N
             return [quote] if any(name == "create" for name, _ in calls) else []
         if method == "create":
             return 42
+        if method == "write":
+            return True
         raise AssertionError(method)
 
     monkeypatch.setattr(client, "_request", fake_request)
@@ -147,6 +156,9 @@ def test_odoo_quote_creation_is_idempotent(monkeypatch: pytest.MonkeyPatch) -> N
     assert result == quote
     assert calls[1][1]["vals_list"]["order_line"] == [[0, 0, {"name": "Ventana"}]]
     assert calls[1][1]["vals_list"]["x_studio_no_presupuesto_preweb"] == "2026/198"
+    assert calls[3][0] == "write"
+    assert "CONCEPTO:</strong> S00042" in calls[3][1]["vals"]["note"]
+    assert "ES53 0182 4286 9102 0157 5002" in calls[3][1]["vals"]["note"]
 
     calls.clear()
     monkeypatch.setattr(
@@ -168,18 +180,22 @@ def test_odoo_quote_creation_is_idempotent(monkeypatch: pytest.MonkeyPatch) -> N
     assert calls == []
 
 
-def test_odoo_reuses_one_technical_product(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_odoo_reuses_product_with_visible_commercial_title(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     client = OdooClient(base_url="https://odoo.example", api_key="test")
-    calls: list[str] = []
+    calls: list[tuple[str, dict]] = []
 
     def fake_request(*, model: str, method: str, payload: dict, timeout=30):
         assert model == "product.product"
-        calls.append(method)
+        calls.append((method, payload))
         return [{"id": 9, "uom_id": [1, "Units"]}]
 
     monkeypatch.setattr(client, "_request", fake_request)
-    assert client.ensure_prefweb_line_product() == (9, 1)
-    assert calls == ["search_read"]
+    assert client.ensure_sale_line_product(name="  Ventana   2 hojas ") == (9, 1)
+    assert [method for method, _ in calls] == ["search_read"]
+    assert calls[0][1]["domain"][0] == ["name", "=", "Ventana 2 hojas"]
+    assert "default_code" not in calls[0][1]
 
 
 def test_odoo_finds_existing_quotes_by_prefweb_number(
@@ -248,6 +264,9 @@ def test_odoo_overwrite_replaces_lines_without_creating_sale_order(
         [5, 0, 0],
         [0, 0, {"name": "Ventana nueva"}],
     ]
+    assert "FORMA DE PAGO: TRANSFERENCIA BANCARIA" in calls[0][1]["vals"]["note"]
+    assert "CONCEPTO:</strong> S00227" in calls[0][1]["vals"]["note"]
+    assert "PrefWeb" not in calls[0][1]["vals"]["note"]
 
 
 def test_odoo_refuses_overwrite_of_confirmed_sale(

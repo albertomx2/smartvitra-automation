@@ -12,7 +12,7 @@ def _money(value: float) -> Decimal:
     return Decimal(str(value)).quantize(CENT, rounding=ROUND_HALF_UP)
 
 
-def _line_title(item: PrefWebSalesItem) -> str:
+def sale_line_title(item: PrefWebSalesItem) -> str:
     title = (
         item.description or item.reference or item.nomenclature or "Partida PrefWeb"
     ).strip()
@@ -50,8 +50,7 @@ def build_sale_order_lines(
     *,
     goods_tax_id: int,
     services_tax_id: int,
-    product_id: int,
-    product_uom_id: int,
+    products_by_title: dict[str, tuple[int, int]],
 ) -> list[dict[str, Any]]:
     """Mirror every PrefWeb item, including included services, without repricing it."""
     validate_prefweb_quote_totals(project)
@@ -60,10 +59,12 @@ def build_sale_order_lines(
     for index, item in enumerate(project.items, start=1):
         quantity = item.quantity or 1
         tax_id = goods_tax_id if item.item_type == "Design" else services_tax_id
+        title = sale_line_title(item)
+        product_id, product_uom_id = products_by_title[title]
         lines.append(
             {
                 "sequence": index * 10,
-                "name": _line_title(item),
+                "name": title,
                 "product_id": product_id,
                 "product_uom_id": product_uom_id,
                 "product_uom_qty": quantity,
@@ -75,10 +76,12 @@ def build_sale_order_lines(
 
     header_discount = _money(abs(project.commercial_discount_amount))
     if header_discount:
+        discount_title = "Descuento comercial"
+        product_id, product_uom_id = products_by_title[discount_title]
         lines.append(
             {
                 "sequence": (len(lines) + 1) * 10,
-                "name": "Descuento comercial PrefWeb",
+                "name": discount_title,
                 "product_id": product_id,
                 "product_uom_id": product_uom_id,
                 "product_uom_qty": 1,

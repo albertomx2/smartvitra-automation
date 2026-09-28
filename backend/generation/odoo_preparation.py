@@ -12,6 +12,7 @@ from backend.generation.artifact_repository import GenerationArtifactRepository
 from backend.integrations.odoo import OdooClient
 from backend.integrations.odoo.quotation import (
     build_sale_order_lines,
+    sale_line_title,
     validate_prefweb_quote_totals,
 )
 from backend.integrations.prefweb.service import PrefWebService
@@ -58,13 +59,18 @@ class OdooQuotationPreparationService:
 
         odoo = OdooClient()
         goods_tax_id, services_tax_id = odoo.get_sale_tax_ids(rate=project.tax)
-        product_id, product_uom_id = odoo.ensure_prefweb_line_product()
+        product_titles = {sale_line_title(item) for item in project.items}
+        if project.commercial_discount_amount:
+            product_titles.add("Descuento comercial")
+        products_by_title = {
+            title: odoo.ensure_sale_line_product(name=title)
+            for title in sorted(product_titles)
+        }
         lines = build_sale_order_lines(
             project,
             goods_tax_id=goods_tax_id,
             services_tax_id=services_tax_id,
-            product_id=product_id,
-            product_uom_id=product_uom_id,
+            products_by_title=products_by_title,
         )
 
         partner, created = odoo.find_or_create_partner(

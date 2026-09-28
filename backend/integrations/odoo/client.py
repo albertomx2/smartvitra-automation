@@ -235,30 +235,36 @@ class OdooClient:
         )
         return int(goods["id"]), int(services["id"])
 
-    def ensure_prefweb_line_product(self) -> tuple[int, int]:
-        """Reuse one technical product; item titles live on quotation lines."""
-        code = "SV-PREFWEB-LINE"
+    def ensure_sale_line_product(self, *, name: str) -> tuple[int, int]:
+        """Use the commercial line title as the visible Odoo product name."""
+        cleaned_name = " ".join(name.split())
+        if not cleaned_name:
+            raise ValueError("Odoo sale line product needs a name")
         products = self._request(
             model="product.product",
             method="search_read",
             payload={
-                "domain": [["default_code", "=", code]],
+                "domain": [
+                    ["name", "=", cleaned_name],
+                    ["sale_ok", "=", True],
+                ],
                 "fields": ["id", "uom_id"],
-                "limit": 2,
+                "order": "id asc",
+                "limit": 1,
             },
         )
-        if not isinstance(products, list) or len(products) > 1:
-            raise RuntimeError("Unexpected SmartVitra Odoo product response")
+        if not isinstance(products, list):
+            raise TypeError("Unexpected Odoo sale product response")
         if not products:
             created = self._request(
                 model="product.product",
                 method="create",
                 payload={
                     "vals_list": {
-                        "name": "Partida PrefWeb SmartVitra",
-                        "default_code": code,
+                        "name": cleaned_name,
                         "type": "service",
                         "sale_ok": True,
+                        "purchase_ok": False,
                     }
                 },
             )
@@ -269,13 +275,27 @@ class OdooClient:
                 payload={"ids": [product_id], "fields": ["id", "uom_id"]},
             )
             if not isinstance(products, list) or len(products) != 1:
-                raise RuntimeError("Created Odoo product could not be read back")
+                raise RuntimeError("Created Odoo sale product could not be read back")
 
         product = products[0]
         uom = product.get("uom_id")
         if not isinstance(uom, list) or not uom:
-            raise RuntimeError("Odoo SmartVitra product has no unit of measure")
+            raise RuntimeError("Odoo sale product has no unit of measure")
         return int(product["id"]), int(uom[0])
+
+    @staticmethod
+    def _quotation_payment_note(*, quotation_name: str) -> str:
+        concept = escape(quotation_name.strip())
+        if not concept:
+            raise ValueError("Odoo quotation needs a number for the payment concept")
+        return (
+            "<p><strong>FORMA DE PAGO: TRANSFERENCIA BANCARIA</strong><br/>"
+            "<strong>NÚMERO DE CUENTA:</strong> "
+            "ES53 0182 4286 9102 0157 5002</p>"
+            "<p><strong>BENEFICIARIO:</strong> "
+            "COMERCIAL DE ALUMINIO Y PVC ASPA, S.L.</p>"
+            f"<p><strong>CONCEPTO:</strong> {concept}</p>"
+        )
 
     def find_sale_quote_by_origin(self, *, origin: str) -> dict[str, Any] | None:
         result = self._request(
@@ -365,10 +385,8 @@ class OdooClient:
                     "origin": origin,
                     "client_order_ref": reference,
                     "x_studio_no_presupuesto_preweb": prefweb_number,
-                    "note": (
-                        f"<p>Condiciones de pago de PrefWeb: {escape(payment_term)}</p>"
-                        if payment_term
-                        else ""
+                    "note": self._quotation_payment_note(
+                        quotation_name=str(existing["name"]),
                     ),
                     "order_line": [[5, 0, 0], *[[0, 0, line] for line in lines]],
                 },
@@ -407,11 +425,6 @@ class OdooClient:
             "x_studio_no_presupuesto_preweb": prefweb_number,
             "order_line": [[0, 0, line] for line in lines],
         }
-        if payment_term:
-            values["note"] = (
-                f"<p>Condiciones de pago de PrefWeb: {escape(payment_term)}</p>"
-            )
-
         result = self._request(
             model="sale.order",
             method="create",
@@ -428,6 +441,20 @@ class OdooClient:
         quote = self.find_sale_quote_by_origin(origin=origin)
         if quote is None or int(quote["id"]) != quote_id:
             raise RuntimeError("Created Odoo quote could not be read back")
+        note_updated = self._request(
+            model="sale.order",
+            method="write",
+            payload={
+                "ids": [quote_id],
+                "vals": {
+                    "note": self._quotation_payment_note(
+                        quotation_name=str(quote["name"]),
+                    )
+                },
+            },
+        )
+        if note_updated is not True:
+            raise RuntimeError("Odoo did not confirm quotation payment details")
         return quote
 
     def fetch_sale_quote_pdf(self, *, quote_id: int) -> bytes:
