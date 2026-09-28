@@ -51,3 +51,64 @@ def test_png_is_not_modified(
     )
 
     assert result == source
+
+
+def test_jpeg_exif_rotation_is_baked_into_pixels(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "portrait-from-tablet.jpg"
+
+    image = Image.new(
+        "RGB",
+        (120, 80),
+        color="navy",
+    )
+    exif = image.getexif()
+    exif[274] = 6
+    image.save(
+        source,
+        format="JPEG",
+        exif=exif,
+    )
+
+    result = PptxImageNormalizer().normalize(
+        image_path=source,
+        work_dir=(tmp_path / "normalized"),
+    )
+
+    assert result != source
+    assert result.suffix == ".png"
+
+    with Image.open(result) as normalized:
+        assert normalized.size == (80, 120)
+        assert normalized.getexif().get(274) in (None, 1)
+
+
+def test_jpeg_exif_half_turn_is_baked_into_pixels(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "half-turn.jpg"
+
+    image = Image.new(
+        "RGB",
+        (120, 80),
+        color="navy",
+    )
+    exif = image.getexif()
+    exif[274] = 3
+    image.save(
+        source,
+        format="JPEG",
+        exif=exif,
+    )
+
+    result = PptxImageNormalizer().normalize(
+        image_path=source,
+        work_dir=(tmp_path / "normalized"),
+    )
+
+    assert result != source
+
+    with Image.open(result) as normalized:
+        assert normalized.size == (120, 80)
+        assert normalized.getexif().get(274) in (None, 1)

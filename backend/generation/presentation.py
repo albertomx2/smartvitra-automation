@@ -46,6 +46,9 @@ from backend.presentation.content.template_v2_generator import (
 from backend.presentation.content.template_v2_normalizer import (
     TemplateV2ContentNormalizer,
 )
+from backend.rendering.pptx.image_normalizer import (
+    PptxImageNormalizer,
+)
 from backend.rendering.pptx.renderer import (
     PowerPointRenderer,
 )
@@ -176,6 +179,15 @@ class RealPresentationGenerator:
         if scene is not None:
             source_photo = self._get_scene_photo_path(
                 scene,
+            )
+
+        if source_photo is not None:
+            # Use the same upright pixels for the vertical slide-2 frame and
+            # for Gemini. This prevents slide 3 from inheriting a phone/tablet
+            # EXIF rotation that PowerPoint or Vertex may interpret differently.
+            source_photo = PptxImageNormalizer().normalize(
+                image_path=source_photo,
+                work_dir=(work_dir / "upright_source_photo"),
             )
 
         if scene is not None and source_photo is not None:

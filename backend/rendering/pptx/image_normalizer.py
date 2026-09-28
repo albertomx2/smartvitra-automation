@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 PPTX_SUPPORTED_FORMATS = {
     "BMP",
@@ -27,8 +27,9 @@ class PptxImageNormalizer:
 
         with Image.open(image_path) as image:
             image_format = image.format.upper() if image.format else None
+            orientation = image.getexif().get(274, 1)
 
-            if image_format in PPTX_SUPPORTED_FORMATS:
+            if image_format in PPTX_SUPPORTED_FORMATS and orientation in (None, 1):
                 return image_path
 
             work_dir.mkdir(
@@ -43,7 +44,14 @@ class PptxImageNormalizer:
             if output_path.exists():
                 return output_path
 
-            converted = image.convert("RGBA")
+            # Phones and tablets often store landscape pixels plus an EXIF
+            # instruction telling viewers to rotate them. Browsers honour that
+            # instruction, but PowerPoint and image-generation APIs do not do
+            # so consistently. Bake the orientation into the pixels and save a
+            # metadata-free PNG before either consumer sees the image.
+            upright = ImageOps.exif_transpose(image)
+
+            converted = upright.convert("RGBA" if "A" in upright.getbands() else "RGB")
 
             converted.save(
                 output_path,
