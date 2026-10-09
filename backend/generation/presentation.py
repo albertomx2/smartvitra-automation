@@ -12,6 +12,7 @@ from backend.generation.snapshot import (
     CaseGenerationSnapshot,
 )
 from backend.generation.text_normalization import (
+    abbreviate_street_for_geocoding,
     expand_street_abbreviations,
 )
 from backend.integrations.google_maps.street_view import (
@@ -353,7 +354,9 @@ class RealPresentationGenerator:
         if not project.customer_address:
             return None
 
-        address = RealPresentationGenerator._build_address(snapshot)
+        address = abbreviate_street_for_geocoding(
+            RealPresentationGenerator._build_address(snapshot)
+        )
 
         try:
             client = GoogleStreetViewFacadeClient()

@@ -7,6 +7,11 @@ _CALLE_ABBREVIATION = re.compile(
     flags=re.IGNORECASE,
 )
 
+_CALLE_NAME = re.compile(
+    r"(?<!\w)calle\s+",
+    flags=re.IGNORECASE,
+)
+
 
 def expand_street_abbreviations(
     value: str,
@@ -15,5 +20,16 @@ def expand_street_abbreviations(
 
     return _CALLE_ABBREVIATION.sub(
         "Calle ",
+        value,
+    )
+
+
+def abbreviate_street_for_geocoding(
+    value: str,
+) -> str:
+    """Use the PrefWeb street form known to geocode reliably."""
+
+    return _CALLE_NAME.sub(
+        "C/ ",
         value,
     )
