@@ -50,6 +50,9 @@ from backend.presentation.content.template_v2_normalizer import (
 from backend.rendering.pptx.image_normalizer import (
     PptxImageNormalizer,
 )
+from backend.rendering.pptx.media_optimizer import (
+    PptxMediaOptimizer,
+)
 from backend.rendering.pptx.renderer import (
     PowerPointRenderer,
 )
@@ -147,6 +150,14 @@ class RealPresentationGenerator:
         )
 
         renderer.save(output_path)
+
+        # PowerPoint keeps the original bytes of every inserted photograph,
+        # even when it is displayed in a small cropped frame. Recompress only
+        # opaque photographic media after rendering; slide XML, crop values,
+        # text, geometry and transparent brand assets remain untouched.
+        PptxMediaOptimizer().optimize(
+            presentation_path=output_path,
+        )
 
         return PresentationGenerationResult(
             path=output_path,
