@@ -9,7 +9,7 @@ from backend.rendering.pptx.template_v2_image_renderer import (
 
 TEMPLATE = Path("experiments/pptx_template/input/template.pptx")
 
-FAKE_IMAGE = Path("experiments/pptx_template/input/" "images/problem_test.jpg")
+FAKE_IMAGE = Path("experiments/pptx_template/input/images/problem_test.jpg")
 
 
 def test_template_v2_image_replacement_preserves_geometry():
@@ -53,7 +53,6 @@ def test_template_v2_all_image_bindings_can_render():
         "project_photo_1": FAKE_IMAGE,
         "project_photo_2": FAKE_IMAGE,
         "project_photo_3": FAKE_IMAGE,
-        "generated_result": FAKE_IMAGE,
     }
 
     TemplateV2ImageRenderer().render(
@@ -61,6 +60,35 @@ def test_template_v2_all_image_bindings_can_render():
         images=images,
     )
 
-    assert renderer.find_shape("sv_s07_generated_result_image").name == (
-        "sv_s07_generated_result_image"
+    for shape_name in (
+        "sv_s01_cover_photo",
+        "sv_s02_problem_photo",
+        "sv_s03_generated_solution_image",
+        "sv_s05_project_photo_1",
+        "sv_s05_project_photo_2",
+        "sv_s05_project_photo_3",
+    ):
+        assert renderer.find_shape(shape_name).name == shape_name
+
+
+def test_problem_slide_image_fills_slide_and_removes_legacy_content():
+    renderer = PowerPointRenderer(TEMPLATE)
+
+    TemplateV2ImageRenderer().render(
+        renderer=renderer,
+        images={
+            "problem_photo": Path(
+                "assets/presentation/problem_variants/noise_heat_cold.png"
+            ),
+        },
     )
+
+    slide = renderer.presentation.slides[1]
+    assert len(slide.shapes) == 1
+
+    picture = slide.shapes[0]
+    assert picture.name == "sv_s02_problem_photo"
+    assert picture.left == 0
+    assert picture.top == 0
+    assert picture.width == renderer.presentation.slide_width
+    assert picture.height == renderer.presentation.slide_height

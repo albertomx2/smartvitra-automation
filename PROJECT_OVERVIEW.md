@@ -28,11 +28,13 @@ SmartVitra transforma un presupuesto técnico y la información recogida durante
 
 ## Narración eficiente
 
-- Variables por cliente: Gemini redacta las slides 1, 2 y 3; la slide 7 se redacta por código con datos económicos exactos. ElevenLabs produce esos cuatro audios.
-- Fijas: slides 4, 5, 6, 8, 9 y 10; texto en `backend/generation/narration/script/fixed.py` y MP3 en `assets/narration/fixed/v5/`. La slide 8 explica la mejora adicional por confirmar el proyecto dentro de los 15 días. Todos estos audios usan la voz de Alberto.
+- Variables por cliente: Gemini redacta las slides 1, 2 y 3; las slides 6 y 7 se redactan por código con los datos económicos exactos. ElevenLabs produce esos cinco audios.
+- La imagen de la slide 2 no se genera con IA: se elige entre siete diseños corporativos fijos según las menciones de ruido, calor y frío presentes en los selectores, las notas generales y las notas por ventana. Un selector térmico sin más detalle se interpreta como frío y calor. El audio de la slide 2 continúa siendo variable.
+- Dinámicas: slides 1, 2, 3, 6 y 7. La slide 6 presenta Thermofibra y el importe principal; la slide 7 calcula las alternativas al 15 % menos y al 10 % más.
+- Fijas: slides 4, 5, 8, 9 y 10; texto en `backend/generation/narration/script/fixed.py` y MP3 en `assets/narration/fixed/v7/`. La slide 5 fusiona instalación y reseñas; la slide 8 explica para quién está pensada la propuesta; la slide 9 presenta la mejora por aceptar en 15 días; y la slide 10 añade el incentivo no acumulativo de los primeros 5 días y el cierre de contacto. Todos estos audios usan la voz de Alberto.
 - Los audios fijos solo deben regenerarse si cambia deliberadamente su texto o voz: `PYTHONPATH=. python scripts/generate_fixed_narration_audio.py --force`.
 - Las fichas técnicas se añaden una sola vez según PrefWeb: cajón SUMUM Thermoacustic con persiana, Microventilación y UNIK con oscilobatientes, e iSlide con correderas.
-- Si hay descuento de cabecera o de línea de ventana, el contexto incluye `discount_applied=true` y la slide 7 garantiza el porcentaje, el precio final y la condición de contratación en los próximos 15 días.
+- La slide 7 toma el importe Thermofibra como referencia y calcula siempre Cortizo A70 al 15 % menos y Refine al 10 % más.
 - El montaje añade una cola silenciosa por slide para absorber redondeos de códec y fotogramas.
 
 ## Estado comercial y Odoo

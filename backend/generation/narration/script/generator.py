@@ -93,9 +93,12 @@ class NarrationScriptGenerator:
             slide.slide_number: slide for slide in variable_script.slides
         }
 
-        slides_by_number[7] = self._build_investment_slide(
+        slides_by_number[6] = self._build_investment_slide(
             context=context,
             presentation_content=presentation_content,
+        )
+        slides_by_number[7] = self._build_alternatives_slide(
+            context=context,
         )
 
         slides_by_number.update(
@@ -182,39 +185,89 @@ class NarrationScriptGenerator:
 
         pricing = context.get("pricing") or {}
         total = float(pricing.get("total") or 0)
-        formatted_total = (
-            f"{total:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
-        )
-        percentage = pricing.get("discount_percentage")
-        discount_label = (
-            f"del {float(percentage):g} por ciento " if percentage is not None else ""
-        )
-        if pricing.get("discount_applied"):
-            price_sentence = (
-                f"El precio final, con el descuento {discount_label}aplicado si nos "
-                f"contratas en los próximos 15 días, es de {formatted_total} euros."
-            )
-        else:
-            price_sentence = f"El precio final es de {formatted_total} euros."
-
-        payment_terms = "; ".join(
-            term.replace("%", " por ciento").replace("inst.", "instalación")
-            for term in presentation_content.slide07.payment_terms
-        )
+        formatted_total = NarrationScriptGenerator._format_spoken_amount(total)
+        project_summary = NarrationScriptGenerator._build_project_summary(context)
         narration = (
-            "Creemos que esta elección de ventanas responde bien a las necesidades "
-            "que hemos comentado y es una solución adecuada para mejorar el confort "
-            f"de tu vivienda. {price_sentence} La forma de pago es: {payment_terms}. "
-            "Este presupuesto corresponde a la opción de mayores prestaciones que "
-            "te presentamos a continuación."
+            "Para esta propuesta hemos seleccionado Thermofibra como solución "
+            f"principal. {project_summary} Su combinación de fibra de vidrio en la "
+            "hoja, refuerzo térmico en el marco y triple junta ayuda a mejorar el "
+            f"aislamiento y el confort interior. Con este material, el importe "
+            f"total, con IVA incluido, es de {formatted_total} euros. La forma "
+            "de pago figura en el documento "
+            "de aceptación."
         )
 
         return NarrationSlide(
-            slide_number=7,
+            slide_number=6,
             commercial_objective="investment",
             estimated_duration_seconds=25,
             narration=narration,
         )
+
+    @staticmethod
+    def _build_alternatives_slide(
+        *,
+        context: dict,
+    ) -> NarrationSlide:
+        pricing = context.get("pricing") or {}
+        total = float(pricing.get("total") or 0)
+        cortizo_total = total * 0.85
+        refine_total = total * 1.10
+
+        narration = (
+            "Además, SmartVitra ofrece dos alternativas con materiales distintos. "
+            "Cortizo A setenta reduce la inversión un quince por ciento frente a "
+            f"Thermofibra, hasta {NarrationScriptGenerator._format_spoken_amount(cortizo_total)} "
+            "euros, con un aislamiento térmico inferior. Refine incrementa la "
+            f"inversión un diez por ciento, hasta {NarrationScriptGenerator._format_spoken_amount(refine_total)} "
+            "euros, y aporta hoja oculta, una estética más limpia y mayor superficie "
+            "acristalada. Ambos importes incluyen IVA y mantienen la misma forma de pago."
+        )
+
+        return NarrationSlide(
+            slide_number=7,
+            commercial_objective="material_alternatives",
+            estimated_duration_seconds=25,
+            narration=narration,
+        )
+
+    @staticmethod
+    def _build_project_summary(context: dict) -> str:
+        proposal = context.get("proposal") or {}
+        openings = proposal.get("openings") or []
+
+        quantities: list[int] = []
+        rooms: list[str] = []
+
+        for opening in openings:
+            if not isinstance(opening, dict):
+                continue
+
+            try:
+                quantities.append(max(1, int(opening.get("quantity") or 1)))
+            except (TypeError, ValueError):
+                quantities.append(1)
+
+            room = opening.get("room")
+            if isinstance(room, str) and room.strip() and room.strip() not in rooms:
+                rooms.append(room.strip())
+
+        total_openings = sum(quantities)
+
+        if total_openings <= 0:
+            return "La configuración responde a las necesidades que hemos comentado."
+
+        noun = "ventana" if total_openings == 1 else "ventanas"
+        room_text = ""
+        if rooms:
+            room_text = " para " + ", ".join(rooms[:3])
+
+        return f"La propuesta incluye {total_openings} {noun}{room_text}."
+
+    @staticmethod
+    def _format_spoken_amount(value: float) -> str:
+        rounded = round(value)
+        return f"{rounded:,}".replace(",", ".")
 
     def _recalculate(
         self,

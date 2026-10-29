@@ -101,10 +101,11 @@ def test_generator_requests_only_variable_slides_and_inserts_fixed_copy() -> Non
                 },
             },
             slide07=SimpleNamespace(
+                budget_amount="4.478€",
                 payment_terms=[
                     "50% al confirmar el pedido",
                     "50% al finalizar",
-                ]
+                ],
             ),
         ),
     )
@@ -123,8 +124,10 @@ def test_generator_requests_only_variable_slides_and_inserts_fixed_copy() -> Non
     assert "CE BRONCE" not in llm.user_prompt
     assert "Calle Pablo Vidal" in script.slides[0].narration
     assert "C/ Pablo Vidal" not in script.slides[0].narration
-    assert "próximos 15 días" in script.slides[6].narration
-    assert "15 por ciento" in script.slides[6].narration
-    assert "4.478,19 euros" in script.slides[6].narration
-    assert "modelo" not in script.slides[6].narration.lower()
-    assert "elección de ventanas" in script.slides[6].narration
+    assert "4.478 euros" in script.slides[5].narration
+    assert "Thermofibra" in script.slides[5].narration
+    assert "modelo" not in script.slides[5].narration.lower()
+    assert "3.806 euros" in script.slides[6].narration
+    assert "4.926 euros" in script.slides[6].narration
+    assert "quince por ciento" in script.slides[6].narration
+    assert "diez por ciento" in script.slides[6].narration

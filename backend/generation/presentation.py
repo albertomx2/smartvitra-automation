@@ -8,6 +8,9 @@ from pathlib import Path
 from backend.generation.payment_terms import (
     resolve_payment_terms,
 )
+from backend.generation.problem_slide import (
+    ProblemSlideSelector,
+)
 from backend.generation.snapshot import (
     CaseGenerationSnapshot,
 )
@@ -170,18 +173,15 @@ class RealPresentationGenerator:
         snapshot: CaseGenerationSnapshot,
         work_dir: Path,
     ) -> dict[str, Path]:
-        result: dict[str, Path] = {}
+        result: dict[str, Path] = {
+            "problem_photo": ProblemSlideSelector().select(snapshot),
+        }
 
         photo_paths = self._get_real_photo_paths(snapshot)
 
-        # Select one real customer/window scene.
-        #
-        # This exact scene is used for BOTH:
-        # - slide 2: current/problem photograph;
-        # - slide 3: AI-generated proposed result.
-        #
-        # Therefore the AI transformation always corresponds
-        # to the same PrefWeb window as the displayed photo.
+        # Select one real customer/window scene for the proposed-result image
+        # on slide 3. Slide 2 is now a fixed brand asset selected
+        # deterministically from the problems reported in the workspace.
         scene = SolutionImageSceneSelector().select(
             snapshot,
         )
@@ -194,27 +194,20 @@ class RealPresentationGenerator:
             )
 
         if source_photo is not None:
-            # Use the same upright pixels for the vertical slide-2 frame and
-            # for Gemini. This prevents slide 3 from inheriting a phone/tablet
-            # EXIF rotation that PowerPoint or Vertex may interpret differently.
+            # Normalize phone/tablet EXIF rotation before sending the source
+            # image to Vertex for slide 3.
             source_photo = PptxImageNormalizer().normalize(
                 image_path=source_photo,
                 work_dir=(work_dir / "upright_source_photo"),
             )
 
         if scene is not None and source_photo is not None:
-            result["problem_photo"] = source_photo
-
             result["generated_solution"] = self._generate_solution_image(
                 snapshot=snapshot,
                 scene=scene,
                 source_photo=source_photo,
                 work_dir=work_dir,
             )
-        elif photo_paths:
-            # Legacy fallback when no window has both
-            # problem metadata and a linked photograph.
-            result["problem_photo"] = photo_paths[0]
 
         # Related SmartVitra projects:
         # selected explicitly in the workspace.

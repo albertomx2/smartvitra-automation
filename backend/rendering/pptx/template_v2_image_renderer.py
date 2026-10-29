@@ -37,3 +37,8 @@ class TemplateV2ImageRenderer:
                 binding.shape_name,
                 normalized_path,
             )
+
+            if key == "problem_photo":
+                renderer.make_shape_full_slide_and_remove_others(
+                    binding.shape_name,
+                )

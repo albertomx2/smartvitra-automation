@@ -633,6 +633,31 @@ class PowerPointRenderer:
 
         parent.remove(element)
 
+    def make_shape_full_slide_and_remove_others(
+        self,
+        shape_name: str,
+    ) -> None:
+        shape = self.find_shape(shape_name)
+        shapes = cast(
+            SlideShapes,
+            shape._parent,
+        )
+
+        for other_shape in list(shapes):
+            if other_shape._element is shape._element:
+                continue
+
+            element = other_shape._element
+            parent = element.getparent()
+
+            if parent is not None:
+                parent.remove(element)
+
+        shape.left = 0
+        shape.top = 0
+        shape.width = self._presentation.slide_width
+        shape.height = self._presentation.slide_height
+
     def save(
         self,
         output_path: Path,

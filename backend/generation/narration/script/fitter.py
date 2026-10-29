@@ -19,7 +19,22 @@ class NarrationScriptFitter:
 
     TARGET_MAX_WORDS = 420
     MIN_WORDS_PER_SLIDE = 20
-    FIXED_SLIDE_NUMBERS = frozenset({4, 5, 6, 8, 9, 10})
+    FIXED_SLIDE_NUMBERS = frozenset({4, 5, 8, 9, 10})
+    DETERMINISTIC_OBJECTIVES = frozenset(
+        {
+            "investment",
+            "material_alternatives",
+        }
+    )
+
+    @classmethod
+    def _is_protected_slide(cls, slide) -> bool:
+        """Keep fixed audio and exact deterministic prices unchanged."""
+
+        return (
+            slide.slide_number in cls.FIXED_SLIDE_NUMBERS
+            or slide.commercial_objective in cls.DETERMINISTIC_OBJECTIVES
+        )
 
     @staticmethod
     def _word_count(
@@ -139,7 +154,7 @@ class NarrationScriptFitter:
                 original_counts,
                 strict=True,
             )
-            if slide.slide_number in self.FIXED_SLIDE_NUMBERS
+            if self._is_protected_slide(slide)
         )
 
         variable_total = total_words - fixed_words
@@ -148,7 +163,7 @@ class NarrationScriptFitter:
         raw_targets = [
             (
                 count
-                if slide.slide_number in self.FIXED_SLIDE_NUMBERS
+                if self._is_protected_slide(slide)
                 else max(
                     self.MIN_WORDS_PER_SLIDE,
                     int(count / variable_total * variable_budget),
@@ -168,7 +183,7 @@ class NarrationScriptFitter:
                 (
                     index
                     for index, slide in enumerate(script.slides)
-                    if slide.slide_number not in self.FIXED_SLIDE_NUMBERS
+                    if not self._is_protected_slide(slide)
                 ),
                 key=lambda i: raw_targets[i],
             )

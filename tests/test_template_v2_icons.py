@@ -13,7 +13,7 @@ from backend.rendering.pptx.template_v2_icon_renderer import (
 TEMPLATE = Path("experiments/pptx_template/input/template.pptx")
 
 
-def test_template_v2_icons_render():
+def test_template_v2_keeps_redesigned_solution_hyphens():
     renderer = PowerPointRenderer(TEMPLATE)
 
     content = FakeTemplateV2ContentGenerator().generate()
@@ -30,3 +30,4 @@ def test_template_v2_icons_render():
         shape = renderer.find_shape(f"sv_s03_solution_{index}_icon")
 
         assert shape is not None
+        assert shape.text.strip() == "—"

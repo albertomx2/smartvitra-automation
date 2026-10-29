@@ -14,7 +14,7 @@ from backend.generation.snapshot import (
 )
 
 
-def test_slides_two_and_three_share_the_same_upright_source(
+def test_slide_three_receives_an_upright_source_and_slide_two_is_fixed(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -88,9 +88,11 @@ def test_slides_two_and_three_share_the_same_upright_source(
         work_dir=(tmp_path / "work"),
     )
 
-    upright = images["problem_photo"]
+    upright = source_seen_by_gemini[0]
 
-    assert upright == source_seen_by_gemini[0]
+    assert images["problem_photo"] == Path(
+        "assets/presentation/problem_variants/cold_heat.png"
+    )
     assert upright.suffix == ".png"
 
     with Image.open(upright) as normalized:

@@ -32,8 +32,4 @@ TEMPLATE_V2_IMAGE_BINDINGS = {
         key="project_photo_3",
         shape_name="sv_s05_project_photo_3",
     ),
-    "generated_result": TemplateV2ImageBinding(
-        key="generated_result",
-        shape_name=("sv_s07_generated_result_image"),
-    ),
 }

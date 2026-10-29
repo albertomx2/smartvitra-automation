@@ -1,33 +1,41 @@
-from pathlib import Path
-
-from pptx import Presentation
-
-TEMPLATE = Path("experiments/pptx_template/input/template.pptx")
+from backend.generation.narration.script.fixed import (
+    FIXED_NARRATION_TEXT,
+)
 
 
-def _shape(slide, name: str):
-    return next(shape for shape in slide.shapes if shape.name == name)
+def test_slide05_merges_installation_commitments_and_reviews() -> None:
+    narration = FIXED_NARRATION_TEXT[5].lower()
+
+    assert "instalación profesional" in narration
+    assert "remates terminados" in narration
+    assert "zona limpia" in narration
+    assert "reseñas" in narration
+    assert "clientes valoran" in narration
+    assert "pintura" not in narration
 
 
-def test_slide04_uses_generic_installation_commitments() -> None:
-    presentation = Presentation(TEMPLATE)
-    checklist = _shape(presentation.slides[3], "object 19").text
+def test_slide08_explains_who_the_proposal_is_for() -> None:
+    narration = FIXED_NARRATION_TEXT[8].lower()
 
-    assert "Protección y seguridad durante toda la instalación" in checklist
-    assert "Trabajo profesional y cuidado de cada detalle" in checklist
-    assert "Remates exteriores completamente terminados" in checklist
-    assert "excepto remates de pintura y su preparación" in checklist
-    assert "peana" not in checklist.lower()
-    assert "execpto" not in checklist.lower()
+    assert "resolver el problema" in narration
+    assert "comparar soluciones" in narration
+    assert "asesoramiento" in narration
 
 
-def test_slide07_removes_advantages_box_and_keeps_clean_closing() -> None:
-    presentation = Presentation(TEMPLATE)
-    slide = presentation.slides[6]
-    names = {shape.name for shape in slide.shapes}
-    closing = _shape(slide, "object 12").text
+def test_slide09_explains_fifteen_day_incentive() -> None:
+    narration = FIXED_NARRATION_TEXT[9].lower()
 
-    assert {"object 8", "object 9", "object 10", "object 11"}.isdisjoint(names)
-    assert "Ventajas exclusivas" not in closing
-    assert "Gracias por confiar en SmartVitra" in closing
-    assert "vivienda más confortable y eficiente" in closing
+    assert "próximos quince días" in narration
+    assert "mejora compatible" in narration
+
+
+def test_slide10_links_non_cumulative_five_day_incentive_with_contact() -> None:
+    narration = FIXED_NARRATION_TEXT[10].lower()
+
+    assert "primeros cinco días" in narration
+    assert "no acumulativa" in narration
+    assert "certificado energético" in narration
+    assert "mejoras anteriores" in narration
+    assert "cualquier duda" in narration
+    assert "no dudéis en preguntarnos" in narration
+    assert "gracias por confiar en smartvitra" in narration

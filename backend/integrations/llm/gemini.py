@@ -21,14 +21,23 @@ class GeminiStructuredClient(StructuredLLMClient):
         self,
         *,
         api_key: str | None = None,
+        project_id: str | None = None,
+        location: str | None = None,
         model: str | None = None,
     ) -> None:
         resolved_api_key = api_key or os.getenv("GEMINI_API_KEY")
+        resolved_project = project_id or os.getenv("GOOGLE_CLOUD_PROJECT")
 
-        if not resolved_api_key:
-            raise ValueError("GEMINI_API_KEY is required")
-
-        self._client = genai.Client(api_key=resolved_api_key)
+        if resolved_project:
+            self._client = genai.Client(
+                vertexai=True,
+                project=resolved_project,
+                location=(location or os.getenv("GOOGLE_CLOUD_LOCATION") or "global"),
+            )
+        elif resolved_api_key:
+            self._client = genai.Client(api_key=resolved_api_key)
+        else:
+            raise ValueError("GOOGLE_CLOUD_PROJECT or GEMINI_API_KEY is required")
 
         resolved_model = model or os.getenv("GEMINI_MODEL") or "gemini-2.5-flash"
 

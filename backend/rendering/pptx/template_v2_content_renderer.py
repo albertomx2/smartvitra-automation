@@ -1,3 +1,5 @@
+from decimal import ROUND_HALF_UP, Decimal
+
 from backend.presentation.content.template_v2 import (
     TemplateV2PresentationContent,
 )
@@ -30,7 +32,7 @@ class TemplateV2ContentRenderer:
             renderer,
         )
 
-        self._render_slide07(
+        self._render_pricing_slides(
             content,
             renderer,
         )
@@ -166,68 +168,36 @@ class TemplateV2ContentRenderer:
 
             renderer.remove_shape(f"sv_s03_solution_{index}_icon")
 
-    def _render_slide07(
+    def _render_pricing_slides(
         self,
         content: TemplateV2PresentationContent,
         renderer: PowerPointRenderer,
     ) -> None:
-        # Párrafo 0 ("Resumen del proyecto")
-        # se mantiene fijo.
-        #
-        # Los párrafos 1..5 son dinámicos.
+        reference_amount = self._parse_eur(content.slide07.budget_amount)
+        reference_text = self._format_eur(reference_amount)
+        cortizo_text = self._format_eur(reference_amount * Decimal("0.85"))
+        refine_text = self._format_eur(reference_amount * Decimal("1.10"))
 
-        for index in range(
-            5,
-        ):
-            text = (
-                content.slide07.project_summary[index]
-                if index < len(content.slide07.project_summary)
-                else ""
-            )
+        values = {
+            "sv_s07_budget_amount": reference_text,
+            "sv_s07_thermofibra_reference_left": reference_text,
+            "sv_s07_thermofibra_reference_right": reference_text,
+            "sv_s07_cortizo_amount": cortizo_text,
+            "sv_s07_refine_amount": refine_text,
+        }
 
-            renderer.set_paragraph_text_preserving_style(
-                "sv_s07_project_summary",
-                index + 1,
-                text,
-            )
+        for shape_name, value in values.items():
+            renderer.set_text_preserving_style(shape_name, value)
 
-        # Presupuesto:
-        # P0 fijo
-        # P1 importe
-        # P2 IVA + fecha
-        # P3 encabezado pago
-        # P4-P5 condiciones
-
-        renderer.set_paragraph_text_preserving_style(
-            "sv_s07_budget_block",
-            1,
-            content.slide07.budget_amount,
+    @staticmethod
+    def _parse_eur(value: str) -> Decimal:
+        normalized = (
+            value.replace("€", "").replace(" ", "").replace(".", "").replace(",", ".")
         )
+        return Decimal(normalized)
 
-        renderer.set_paragraph_text_preserving_style(
-            "sv_s07_budget_block",
-            2,
-            ("IVA incluido · Válido hasta " f"{content.slide07.budget_valid_until}"),
-        )
-
-        payment_terms = content.slide07.payment_terms
-
-        first_payment_block = ""
-
-        if payment_terms:
-            first_payment_block = payment_terms[0]
-
-        if len(payment_terms) >= 2:
-            first_payment_block += " " + payment_terms[1]
-
-        renderer.set_paragraph_text_preserving_style(
-            "sv_s07_budget_block",
-            4,
-            first_payment_block,
-        )
-
-        renderer.set_paragraph_text_preserving_style(
-            "sv_s07_budget_block",
-            5,
-            (payment_terms[2] if len(payment_terms) >= 3 else ""),
-        )
+    @staticmethod
+    def _format_eur(value: Decimal) -> str:
+        rounded = value.quantize(Decimal(1), rounding=ROUND_HALF_UP)
+        formatted = f"{int(rounded):,}".replace(",", ".")
+        return f"{formatted} €"
