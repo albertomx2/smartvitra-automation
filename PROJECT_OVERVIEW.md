@@ -24,6 +24,7 @@ SmartVitra transforma un presupuesto técnico y la información recogida durante
 - Odoo conserva el contacto comercial y el presupuesto de Ventas en borrador creados al pulsar «Generar»; PrefWeb sigue siendo la fuente del importe final.
 - R2 conserva fotos y resultados cuando `STORAGE_BACKEND=r2`.
 - El snapshot de generación evita que un caso cambie a mitad del pipeline.
+- Con `GENERATION_EXECUTION_BACKEND=cloud_run` se bloquea el polling de la cola compartida: los workers deben recibir un `--job-id` explícito. No arrancar el worker de desarrollo contra la base de datos de producción.
 - La imagen desplegada en Cloud Run, no GitHub por sí solo, determina el código que ejecuta producción.
 
 ## Narración eficiente

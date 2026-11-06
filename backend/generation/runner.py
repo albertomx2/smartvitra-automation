@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import traceback
 import uuid
@@ -79,6 +80,12 @@ class GenerationJobRunner:
         Returns False only when there is
         nothing to process.
         """
+
+        if os.getenv("GENERATION_EXECUTION_BACKEND", "local").lower() == "cloud_run":
+            raise RuntimeError(
+                "Queue polling is disabled with GENERATION_EXECUTION_BACKEND=cloud_run. "
+                "Cloud Run must execute an explicit --job-id."
+            )
 
         job = self._repository.get_next_queued()
 
