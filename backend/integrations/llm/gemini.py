@@ -50,23 +50,34 @@ class GeminiStructuredClient(StructuredLLMClient):
         user_prompt: str,
         response_model: type[T],
     ) -> T:
-        response = self._client.models.generate_content(
-            model=self._model,
-            contents=user_prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=(system_prompt),
-                response_mime_type=("application/json"),
-                response_schema=(response_model),
-                temperature=0.2,
-            ),
-        )
+        # A structured response can occasionally be truncated by the model.
+        # Retry only malformed/empty output once, before failing the whole
+        # presentation. Transport/auth errors retain the SDK's own handling.
+        for attempt in range(2):
+            response = self._client.models.generate_content(
+                model=self._model,
+                contents=user_prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    response_mime_type="application/json",
+                    response_schema=response_model,
+                    max_output_tokens=8192 * (attempt + 1),
+                    temperature=0.2,
+                ),
+            )
 
-        if not response.text:
-            raise RuntimeError("Gemini returned no text")
+            if not response.text:
+                if attempt == 0:
+                    continue
+                raise RuntimeError("Gemini returned no text after retry")
 
-        try:
-            payload = json.loads(response.text)
-        except json.JSONDecodeError as exc:
-            raise RuntimeError("Gemini returned invalid JSON") from exc
+            try:
+                payload = json.loads(response.text)
+            except json.JSONDecodeError as exc:
+                if attempt == 0:
+                    continue
+                raise RuntimeError("Gemini returned invalid JSON after retry") from exc
 
-        return response_model.model_validate(payload)
+            return response_model.model_validate(payload)
+
+        raise RuntimeError("Gemini returned no structured content")
