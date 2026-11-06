@@ -50,23 +50,8 @@ class TemplateV2ContentValidator:
                 )
             )
 
-        for index, issue in enumerate(
-            content.slide02.issues,
-            start=1,
-        ):
-            combined = (f"{issue.keyword} " f"{issue.detail}").strip()
-
-            self._validate_length(
-                violations,
-                f"sv_s02_issue_{index}",
-                combined,
-            )
-
-        self._validate_length(
-            violations,
-            "sv_s02_issue_6",
-            content.slide02.impact_statement,
-        )
+        # Slide 2 uses a full-slide brand image. Its issue descriptions remain
+        # available to narration, but no longer have legacy textbox limits.
 
         for index, solution in enumerate(
             content.slide03.solutions,

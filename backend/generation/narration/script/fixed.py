@@ -7,7 +7,7 @@ from backend.generation.narration.script.models import (
     NarrationSlide,
 )
 
-FIXED_NARRATION_VERSION: Final = "v7"
+FIXED_NARRATION_VERSION: Final = "v8"
 FIXED_NARRATION_VOICE_ID: Final = "SIKGLxQDD9IQ2ip3wCI1"
 
 FIXED_NARRATION_TEXT: Final[dict[int, str]] = {
@@ -33,8 +33,8 @@ FIXED_NARRATION_TEXT: Final[dict[int, str]] = {
     9: (
         "Si aceptáis la propuesta dentro de los próximos quince días, "
         "acordaremos una mejora compatible con la solución elegida. Puede ser "
-        "la motorización de una persiana, una mosquitera, el forrado de una "
-        "peana o una mejora del acristalamiento. La opción aplicable quedará "
+        "la motorización de una persiana, una mosquitera, el forro de peanas "
+        "en las ventanas o una mejora del acristalamiento. La opción aplicable quedará "
         "recogida en el documento de aceptación."
     ),
     10: (

@@ -12,9 +12,9 @@ class NarrationScriptFitter:
     Deterministically reduces excessively long narration while
     preserving every slide and avoiding cuts in the middle of words.
 
-    420 words gives a safety margin below both:
-    - validator MAX_WORDS = 430
-    - validator MAX_DURATION_SECONDS = 190 at 135 wpm
+    The usual budget is 420 words. Fixed recordings and exact pricing are
+    preserved; longer protected copy must still leave room for the minimum
+    narration on each customer-specific slide.
     """
 
     TARGET_MAX_WORDS = 420
@@ -35,6 +35,18 @@ class NarrationScriptFitter:
             slide.slide_number in cls.FIXED_SLIDE_NUMBERS
             or slide.commercial_objective in cls.DETERMINISTIC_OBJECTIVES
         )
+
+    @classmethod
+    def word_budget(cls, script: NarrationScript) -> int:
+        required_words = sum(
+            (
+                len(slide.narration.split())
+                if cls._is_protected_slide(slide)
+                else min(len(slide.narration.split()), cls.MIN_WORDS_PER_SLIDE)
+            )
+            for slide in script.slides
+        )
+        return max(cls.TARGET_MAX_WORDS, required_words)
 
     @staticmethod
     def _word_count(
@@ -139,8 +151,9 @@ class NarrationScriptFitter:
         script: NarrationScript,
     ) -> NarrationScript:
         total_words = sum(self._word_count(slide.narration) for slide in script.slides)
+        maximum_words = self.word_budget(script)
 
-        if total_words <= self.TARGET_MAX_WORDS:
+        if total_words <= maximum_words:
             return script
 
         # Fixed slides have pre-generated audio. Their text must never change,
@@ -158,14 +171,14 @@ class NarrationScriptFitter:
         )
 
         variable_total = total_words - fixed_words
-        variable_budget = self.TARGET_MAX_WORDS - fixed_words
+        variable_budget = maximum_words - fixed_words
 
         raw_targets = [
             (
                 count
                 if self._is_protected_slide(slide)
                 else max(
-                    self.MIN_WORDS_PER_SLIDE,
+                    min(count, self.MIN_WORDS_PER_SLIDE),
                     int(count / variable_total * variable_budget),
                 )
             )
@@ -177,19 +190,18 @@ class NarrationScriptFitter:
         ]
 
         # Correct rounding/floor effects so the sum never exceeds
-        # TARGET_MAX_WORDS.
-        while sum(raw_targets) > self.TARGET_MAX_WORDS:
+        # the budget derived from this deck's protected narration.
+        while sum(raw_targets) > maximum_words:
             index = max(
                 (
                     index
                     for index, slide in enumerate(script.slides)
                     if not self._is_protected_slide(slide)
+                    and raw_targets[index]
+                    > min(original_counts[index], self.MIN_WORDS_PER_SLIDE)
                 ),
                 key=lambda i: raw_targets[i],
             )
-
-            if raw_targets[index] <= self.MIN_WORDS_PER_SLIDE:
-                break
 
             raw_targets[index] -= 1
 

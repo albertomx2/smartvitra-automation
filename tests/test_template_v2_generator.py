@@ -8,6 +8,9 @@ from backend.presentation.content.template_v2_generator import (
 from backend.presentation.content.template_v2_llm_models import (
     TemplateV2LLMContent,
 )
+from backend.presentation.content.template_v2_validator import (
+    TemplateV2ContentValidator,
+)
 
 
 class FakeLLMClient:
@@ -111,3 +114,11 @@ def test_deterministic_data_are_not_llm_generated():
     assert content.slide07.budget_amount == "4.180€"
 
     assert content.slide07.budget_valid_until == "26/08/26"
+
+    # These descriptions feed the variable narration, not visible text boxes
+    # on the fixed slide-2 image. They must not trigger paid LLM corrections.
+    for issue in content.slide02.issues:
+        issue.keyword = "AISLAMIENTO TÉRMICO Y ACÚSTICO"
+        issue.detail = "Una descripción extensa de las necesidades de la vivienda."
+    content.slide02.impact_statement = "Descripción de confort interior. " * 10
+    TemplateV2ContentValidator().validate(content)

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import math
 from typing import ClassVar
 
+from backend.generation.narration.script.fitter import NarrationScriptFitter
 from backend.generation.narration.script.models import (
     NarrationScript,
 )
@@ -34,13 +36,21 @@ class NarrationScriptValidator:
             )
 
         actual_words = len(script.full_text.split())
+        maximum_words = max(
+            self.MAX_WORDS,
+            NarrationScriptFitter.word_budget(script) + 10,
+        )
+        maximum_duration = max(
+            self.MAX_DURATION_SECONDS,
+            math.ceil(maximum_words / 135 * 60) + len(script.slides),
+        )
 
         if actual_words < self.MIN_WORDS:
             raise NarrationScriptValidationError(
                 "Narration is too short: " f"{actual_words} words"
             )
 
-        if actual_words > self.MAX_WORDS:
+        if actual_words > maximum_words:
             raise NarrationScriptValidationError(
                 "Narration is too long: " f"{actual_words} words"
             )
@@ -50,7 +60,7 @@ class NarrationScriptValidator:
                 "Estimated narration duration " "is too short"
             )
 
-        if script.estimated_duration_seconds > self.MAX_DURATION_SECONDS:
+        if script.estimated_duration_seconds > maximum_duration:
             raise NarrationScriptValidationError(
                 "Estimated narration duration " "is too long"
             )

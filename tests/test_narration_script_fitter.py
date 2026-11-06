@@ -1,3 +1,7 @@
+from unittest.mock import Mock
+
+import pytest
+
 from backend.generation.narration.script.fitter import (
     NarrationScriptFitter,
 )
@@ -5,9 +9,14 @@ from backend.generation.narration.script.fixed import (
     FIXED_NARRATION_TEXT,
     build_fixed_narration_slides,
 )
+from backend.generation.narration.script.generator import NarrationScriptGenerator
 from backend.generation.narration.script.models import (
     NarrationScript,
     NarrationSlide,
+)
+from backend.generation.narration.script.validator import (
+    NarrationScriptValidationError,
+    NarrationScriptValidator,
 )
 
 
@@ -118,3 +127,42 @@ def test_narration_fitter_never_changes_fixed_slides():
         assert result.slides[slide_number - 1].narration == expected_text
 
     assert len(result.full_text.split()) <= NarrationScriptFitter.TARGET_MAX_WORDS
+
+
+def test_long_protected_copy_leaves_a_valid_budget_for_customer_slides():
+    fixed = build_fixed_narration_slides()
+    slides = [
+        fixed.get(number)
+        or NarrationSlide(
+            slide_number=number,
+            commercial_objective=(
+                "investment"
+                if number == 6
+                else "material_alternatives" if number == 7 else "variable"
+            ),
+            estimated_duration_seconds=30,
+            narration=" ".join(
+                ["contenido"] * (85 if number == 6 else 70 if number == 7 else 100)
+            )
+            + ".",
+        )
+        for number in range(1, 11)
+    ]
+    script = NarrationScript(
+        estimated_duration_seconds=300, word_count=0, slides=slides
+    )
+
+    generator = NarrationScriptGenerator(Mock())
+    result = generator._recalculate(NarrationScriptFitter().fit(script))
+
+    assert result.word_count > NarrationScriptValidator.MAX_WORDS
+    assert result.word_count <= NarrationScriptFitter.word_budget(script)
+    for before, after in zip(slides, result.slides, strict=True):
+        if NarrationScriptFitter._is_protected_slide(before):
+            assert after.narration == before.narration
+        else:
+            assert len(after.narration.split()) >= 20
+    NarrationScriptValidator().validate(result)
+
+    with pytest.raises(NarrationScriptValidationError, match="too long"):
+        NarrationScriptValidator().validate(generator._recalculate(script))
