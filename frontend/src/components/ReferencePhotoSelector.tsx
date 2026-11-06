@@ -180,8 +180,8 @@ function ReferencePhotoSelector({
   }
 
   const allConfirmed =
-    selections.length > 0
-    && selections.every(
+    selections.some((item) => item.slot <= 2)
+    && selections.filter((item) => item.slot <= 2).every(
       (item) =>
         item.status === "confirmed",
     )
@@ -212,6 +212,8 @@ function ReferencePhotoSelector({
             Hemos seleccionado trabajos
             similares según las necesidades
             de este proyecto.
+            La tercera imagen será una recreación de la primera,
+            con el ambiente terminado y una persona integrada.
           </p>
         </div>
 
@@ -232,7 +234,7 @@ function ReferencePhotoSelector({
       )}
 
       <div className="reference-grid">
-        {[1, 2, 3].map(
+        {[1, 2].map(
           (slot) => {
             const selection =
               selections.find(

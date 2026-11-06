@@ -10,6 +10,7 @@ from pptx.enum.text import MSO_AUTO_SIZE
 from pptx.presentation import Presentation as PresentationType
 from pptx.shapes.picture import Picture
 from pptx.shapes.shapetree import SlideShapes
+from pptx.util import Inches, Pt
 
 from backend.rendering.pptx.models import (
     SemanticColor,
@@ -632,6 +633,25 @@ class PowerPointRenderer:
             raise RuntimeError(f"{shape_name} has no XML parent")
 
         parent.remove(element)
+
+    def add_picture_caption(self, shape_name: str, text: str) -> None:
+        picture = self.find_shape(shape_name)
+        shapes = cast(SlideShapes, picture._parent)
+        caption = shapes.add_textbox(
+            picture.left,
+            picture.top + picture.height + Inches(0.04),
+            picture.width,
+            Inches(0.35),
+        )
+        caption.name = f"{shape_name}_caption"
+        caption.text_frame.margin_left = 0
+        caption.text_frame.margin_right = 0
+        caption.text_frame.margin_top = 0
+        paragraph = caption.text_frame.paragraphs[0]
+        paragraph.text = text
+        paragraph.font.name = "Aptos"
+        paragraph.font.size = Pt(16)
+        paragraph.font.color.rgb = RGBColor(0, 31, 65)
 
     def make_shape_full_slide_and_remove_others(
         self,

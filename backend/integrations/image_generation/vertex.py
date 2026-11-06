@@ -37,27 +37,23 @@ class VertexSolutionImageClient:
         self,
         *,
         source_photo: Path,
-        window_reference: Path,
+        window_reference: Path | None = None,
         prompt: str,
         output_path: Path,
+        aspect_ratio: str | None = None,
     ) -> Path:
         source_part = self._image_part(
             source_photo,
         )
 
-        reference_part = self._image_part(
-            window_reference,
-        )
+        parts = [source_part]
+        if window_reference is not None:
+            parts.append(self._image_part(window_reference))
+        parts.append(types.Part.from_text(text=prompt))
 
         content = types.Content(
             role="user",
-            parts=[
-                source_part,
-                reference_part,
-                types.Part.from_text(
-                    text=prompt,
-                ),
-            ],
+            parts=parts,
         )
 
         response = self._client.models.generate_content(
@@ -70,6 +66,11 @@ class VertexSolutionImageClient:
                 ],
                 candidate_count=1,
                 temperature=0.2,
+                image_config=(
+                    types.ImageConfig(aspect_ratio=aspect_ratio)
+                    if aspect_ratio is not None
+                    else None
+                ),
             ),
         )
 

@@ -75,8 +75,11 @@ de hojas, dimensiones y calidad visual. Antes de generar, el matcher representa
 hasta tres configuraciones distintas de ventanas reales del presupuesto. Excluye
 chapas y remates auxiliares, puntúa coincidencias parciales por tipo, sistema,
 número de hojas y presencia de fijos, y usa la calidad/formato como desempate.
-Las tres selecciones quedan guardadas por caso y pueden revisarse o sustituirse
-desde la web.
+Las selecciones quedan guardadas por caso y pueden revisarse o sustituirse
+desde la web. La diapositiva conserva las dos primeras fotografías y usa una
+recreación de la primera, ambientada por Gemini Image, en la tercera posición.
+Esa imagen se identifica como recreación y se conserva en R2 por hash de la
+fuente, prompt y modelo; las fotografías originales siguen intactas.
 
 ## Despliegue
 

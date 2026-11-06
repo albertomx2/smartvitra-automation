@@ -70,6 +70,10 @@ def test_template_v2_all_image_bindings_can_render():
     ):
         assert renderer.find_shape(shape_name).name == shape_name
 
+    caption = renderer.find_shape("sv_s05_project_photo_3_caption")
+    assert caption.text == "Recreación orientativa"
+    assert caption.top + caption.height <= renderer.presentation.slide_height
+
 
 def test_problem_slide_image_fills_slide_and_removes_legacy_content():
     renderer = PowerPointRenderer(TEMPLATE)

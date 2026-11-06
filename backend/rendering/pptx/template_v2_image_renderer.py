@@ -42,3 +42,9 @@ class TemplateV2ImageRenderer:
                 renderer.make_shape_full_slide_and_remove_others(
                     binding.shape_name,
                 )
+
+            if key == "project_photo_3":
+                renderer.add_picture_caption(
+                    binding.shape_name,
+                    "Recreación orientativa",
+                )

@@ -50,6 +50,7 @@ from backend.presentation.content.template_v2_generator import (
 from backend.presentation.content.template_v2_normalizer import (
     TemplateV2ContentNormalizer,
 )
+from backend.reference_photos.image_enhancer import RelatedProjectImageEnhancer
 from backend.rendering.pptx.image_normalizer import (
     PptxImageNormalizer,
 )
@@ -217,7 +218,7 @@ class RealPresentationGenerator:
             snapshot.reference_photos,
             key=lambda item: item.slot,
         ):
-            if not 1 <= reference.slot <= 3:
+            if reference.slot not in (1, 2):
                 continue
 
             path = reference_storage.get_path(storage_key=(reference.storage_key))
@@ -226,6 +227,16 @@ class RealPresentationGenerator:
                 continue
 
             result[f"project_photo_" f"{reference.slot}"] = path
+
+        reference_source = result.get("project_photo_1") or result.get(
+            "project_photo_2"
+        )
+        if reference_source is not None:
+            result.setdefault("project_photo_1", reference_source)
+            result.setdefault("project_photo_2", reference_source)
+            result["project_photo_3"] = RelatedProjectImageEnhancer().enhance(
+                source_photo=reference_source,
+            )
 
         facade = self._try_facade(
             snapshot=snapshot,

@@ -11,7 +11,7 @@ from backend.generation.snapshot import (
 )
 
 
-def test_reference_photos_are_mapped_to_project_photo_slots(
+def test_first_reference_is_repeated_as_a_single_generated_third_image(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -36,6 +36,19 @@ def test_reference_photos_are_mapped_to_project_photo_slots(
     monkeypatch.setattr(
         "backend.generation.presentation.ReferencePhotoStorage",
         FakeReferenceStorage,
+    )
+
+    generated = tmp_path / "enhanced_reference.png"
+    source_photos = []
+
+    class FakeEnhancer:
+        def enhance(self, *, source_photo: Path) -> Path:
+            source_photos.append(source_photo)
+            return generated
+
+    monkeypatch.setattr(
+        "backend.generation.presentation.RelatedProjectImageEnhancer",
+        FakeEnhancer,
     )
 
     snapshot = CaseGenerationSnapshot(
@@ -85,4 +98,5 @@ def test_reference_photos_are_mapped_to_project_photo_slots(
 
     assert images["project_photo_1"] == paths[0]
     assert images["project_photo_2"] == paths[1]
-    assert images["project_photo_3"] == paths[2]
+    assert images["project_photo_3"] == generated
+    assert source_photos == [paths[0]]

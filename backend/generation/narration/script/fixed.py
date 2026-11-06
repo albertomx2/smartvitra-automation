@@ -7,13 +7,14 @@ from backend.generation.narration.script.models import (
     NarrationSlide,
 )
 
-FIXED_NARRATION_VERSION: Final = "v8"
+FIXED_NARRATION_VERSION: Final = "v9"
 FIXED_NARRATION_VOICE_ID: Final = "SIKGLxQDD9IQ2ip3wCI1"
 
 FIXED_NARRATION_TEXT: Final[dict[int, str]] = {
     4: (
-        "Aquí podéis ver algunos proyectos de SmartVitra ya terminados. Estas "
-        "imágenes ayudan a visualizar el cuidado de los acabados y el tipo de "
+        "Aquí podéis ver algunos proyectos de SmartVitra, junto a una "
+        "recreación orientativa de uno de ellos. Estas imágenes ayudan a "
+        "visualizar el cuidado de los acabados y el tipo de "
         "resultado que podemos conseguir también en vuestra vivienda."
     ),
     5: (
